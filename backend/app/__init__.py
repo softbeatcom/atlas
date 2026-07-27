@@ -1,0 +1,1 @@
+"""SoftBeat Atlas API."""

@@ -1,0 +1,12 @@
+alembic==1.16.5
+fastapi==0.140.0
+httpx2==2.9.1
+psycopg==3.3.4
+pydantic-settings==2.14.2
+python-jose==3.5.0
+python-multipart==0.0.32
+requests==2.34.2
+ruff==0.16.0
+sqlalchemy==2.0.51
+pytest==9.1.1
+uvicorn==0.51.0

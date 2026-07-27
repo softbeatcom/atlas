@@ -1,10 +1,35 @@
+# Local environment configuration
 .env
+.env.*
+!.env.example
+
+# Application runtime data
 data/storage/
+
+# Python backend: virtual environments, bytecode, packages, and test/tool output
 backend/.venv/
+backend/venv/
+backend/env/
 backend/.pytest_cache/
+backend/.ruff_cache/
+backend/.mypy_cache/
+backend/.coverage
+backend/htmlcov/
+backend/coverage.xml
 backend/*.egg-info/
 backend/__pycache__/
 backend/**/__pycache__/
+backend/**/*.py[cod]
+
+# Vite/React frontend: dependencies, builds, caches, and test output
 frontend/node_modules/
 frontend/dist/
+frontend/.vite/
+frontend/coverage/
+frontend/test-results/
+frontend/playwright-report/
+frontend/blob-report/
 frontend/*.tsbuildinfo
+
+# Local browser-automation state
+.playwright-cli/
