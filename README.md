@@ -60,9 +60,10 @@ Compose richtet das Storage-Stammverzeichnis vor jedem Backend-Start für die fe
 
 ### Entwicklungsdaten zurücksetzen
 
-Die Rohdateien liegen als Host-Bind-Mount in `./data/storage`; sie sind **kein**
-benanntes Docker-Volume. `docker compose down --volumes` entfernt deshalb die
-PostgreSQL-Daten, aber nicht die hochgeladenen Dateien.
+Die Metadaten liegen in PostgreSQL, die Rohdateien als Host-Bind-Mount unter
+`./data/storage`. Das Storage ist **kein** benanntes Docker-Volume:
+`docker compose down --volumes` entfernt daher die Metadaten-Datenbank, aber
+nicht die hochgeladenen Dateien.
 
 Um nur die Rohdateien zu entfernen, ohne die Datenbank zurückzusetzen, führe
 aus `atlas/` Folgendes aus:
@@ -75,8 +76,9 @@ docker compose run --rm --no-deps --user 0 backend \
 **Achtung:** Dadurch bleiben Datensatz-Metadaten in PostgreSQL erhalten, deren
 Dateien nicht mehr existieren. Das eignet sich nur für gezielte Tests.
 
-Für einen sauberen Entwicklungsreset entferne Datenbank und Rohdateien
-gemeinsam und starte den Stack neu:
+Für einen sauberen Entwicklungsreset entferne Metadaten-Datenbank und
+Rohdateien gemeinsam und starte den Stack neu. **Dieser Befehl löscht alle
+lokalen Metadaten und hochgeladenen Dateien unwiderruflich:**
 
 ```bash
 docker compose down --volumes
@@ -84,11 +86,6 @@ docker compose run --rm --no-deps --user 0 backend \
   find /data/storage -mindepth 1 -delete
 docker compose up --build
 ```
-
-Die Umstellung von der früheren Einzeldatei-Struktur auf Mehrdatei-Datensätze
-setzt diesen vollständigen Reset voraus. Die Migration beendet sich bewusst mit
-einem Hinweis, wenn sie bestehende Versionen findet; sie löscht keine
-Bestandsdaten automatisch.
 
 ## Docker-Deployment stoppen
 
