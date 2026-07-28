@@ -19,7 +19,10 @@ from .models import (
     AuditEvent,
     Dataset,
     DatasetVersion,
+    DatasetVersionKeyword,
     Distribution,
+    FileExtension,
+    Keyword,
     MembershipRole,
     Notification,
     Project,
@@ -39,6 +42,7 @@ from .policies import (
 from .schemas import (
     AuditOut,
     DatasetOut,
+    DatasetSearchFacetsOut,
     DecisionIn,
     DirectoryUserOut,
     MembershipIn,
@@ -210,6 +214,7 @@ def dataset_out(session: Session, dataset: Dataset, version: DatasetVersion) -> 
         .where(Distribution.version_id == version.id)
         .order_by(Distribution.position)
     ).all()
+    keywords = version_keyword_labels(session, version.id)
     return {
         "id": dataset.id,
         "project": {
@@ -231,7 +236,7 @@ def dataset_out(session: Session, dataset: Dataset, version: DatasetVersion) -> 
             "title": version.title,
             "description": version.description,
             "dataset_type": version.dataset_type,
-            "keywords": version.keywords,
+            "keywords": keywords,
             "creator": version.creator,
             "version_label": version.version_label,
             "distributions": [
@@ -252,6 +257,15 @@ def dataset_out(session: Session, dataset: Dataset, version: DatasetVersion) -> 
             "published_at": version.published_at,
         },
     }
+
+
+def version_keyword_labels(session: Session, version_id: str) -> list[str]:
+    return list(session.scalars(
+        select(Keyword.label)
+        .join(DatasetVersionKeyword, DatasetVersionKeyword.keyword_id == Keyword.id)
+        .where(DatasetVersionKeyword.version_id == version_id)
+        .order_by(Keyword.label)
+    ).all())
 
 
 def publish(session: Session, user: CurrentUser, dataset: Dataset, version: DatasetVersion) -> None:
@@ -276,13 +290,48 @@ def clean_required(value: str, field: str, maximum: int) -> str:
 def parse_keywords(value: str) -> list[str]:
     if len(value) > 2000:
         api_error(status.HTTP_422_UNPROCESSABLE_CONTENT, "Schlagwörter sind zu lang")
-    keywords = list(dict.fromkeys(item.strip() for item in value.split(",") if item.strip()))
+    keywords: list[str] = []
+    seen: set[str] = set()
+    for item in value.split(","):
+        label = item.strip()
+        normalized = label.lower()
+        if label and normalized not in seen:
+            keywords.append(label)
+            seen.add(normalized)
     if len(keywords) > 50 or any(len(item) > 80 for item in keywords):
         api_error(
             status.HTTP_422_UNPROCESSABLE_CONTENT,
             "Höchstens 50 Schlagwörter mit jeweils 80 Zeichen sind erlaubt",
         )
     return keywords
+
+
+def file_suffix(filename: str) -> str | None:
+    if "." not in filename or filename.endswith("."):
+        return None
+    suffix = filename.rsplit(".", 1)[-1].strip().lower()
+    return suffix or None
+
+
+def ensure_keyword_links(session: Session, version: DatasetVersion, labels: list[str]) -> None:
+    for label in labels:
+        normalized = label.lower()
+        keyword = session.scalar(select(Keyword).where(Keyword.normalized == normalized))
+        if keyword is None:
+            keyword = Keyword(id=str(uuid4()), normalized=normalized, label=label)
+            session.add(keyword)
+        session.add(DatasetVersionKeyword(version_id=version.id, keyword_id=keyword.id))
+
+
+def extension_for(session: Session, filename: str) -> FileExtension | None:
+    suffix = file_suffix(filename)
+    if suffix is None:
+        return None
+    extension = session.scalar(select(FileExtension).where(FileExtension.value == suffix))
+    if extension is None:
+        extension = FileExtension(id=str(uuid4()), value=suffix)
+        session.add(extension)
+    return extension
 
 
 def upload_filename(file: UploadFile) -> str:
@@ -466,22 +515,31 @@ def validate_files(files: list[UploadFile]) -> None:
 
 
 async def add_distributions(
-    dataset: Dataset, version: DatasetVersion, files: list[UploadFile]
+    session: Session, dataset: Dataset, version: DatasetVersion, files: list[UploadFile]
 ) -> list[Distribution]:
     validate_files(files)
     distributions: list[Distribution] = []
+    extensions: dict[str, FileExtension] = {}
     total_size = 0
     try:
         for position, file in enumerate(files, start=1):
+            filename = upload_filename(file)
+            suffix = file_suffix(filename)
+            extension = extensions.get(suffix) if suffix else None
+            if suffix and extension is None:
+                extension = extension_for(session, filename)
+                if extension:
+                    extensions[suffix] = extension
             distribution = Distribution(
                 id=str(uuid4()),
                 version_id=version.id,
                 position=position,
-                original_filename=upload_filename(file),
+                original_filename=filename,
                 storage_key="",
                 content_size=0,
                 media_type="",
                 sha256="",
+                file_extension_id=extension.id if extension else None,
             )
             key = f"{dataset.id}/{version.id}/{distribution.id}/content"
             size, checksum, media_type = await storage.store(key, file)
@@ -529,12 +587,12 @@ async def create_dataset(
         title=clean_required(title, "Titel", 300),
         description=clean_required(description, "Beschreibung", 20_000),
         dataset_type=clean_required(dataset_type, "Datensatztyp", 100),
-        keywords=parse_keywords(keywords),
         creator=user.username,
         version_label=clean_required(version_label or "1.0", "Version", 100),
     )
     try:
-        distributions = await add_distributions(dataset, version, files)
+        ensure_keyword_links(session, version, parse_keywords(keywords))
+        distributions = await add_distributions(session, dataset, version, files)
         session.add_all([dataset, version, *distributions])
         audit(session, user, "dataset.version.created", dataset, version)
         session.commit()
@@ -579,12 +637,12 @@ async def create_next_version(
         title=clean_required(title, "Titel", 300),
         description=clean_required(description, "Beschreibung", 20_000),
         dataset_type=clean_required(dataset_type, "Datensatztyp", 100),
-        keywords=parse_keywords(keywords),
         creator=user.username,
         version_label=clean_required(version_label, "Version", 100),
     )
     try:
-        distributions = await add_distributions(dataset, version, files)
+        ensure_keyword_links(session, version, parse_keywords(keywords))
+        distributions = await add_distributions(session, dataset, version, files)
         session.add_all([version, *distributions])
         audit(session, user, "dataset.version.created", dataset, version)
         session.commit()
@@ -606,15 +664,24 @@ async def create_next_version(
 @app.get("/api/v1/datasets", response_model=list[DatasetOut], tags=["datasets"])
 def list_datasets(
     query: str = "",
-    project_id: str | None = None,
+    title: str = "",
+    project_id: list[str] = Query(default=[]),
     dataset_type: str | None = None,
+    tag: list[str] = Query(default=[]),
+    suffix: list[str] = Query(default=[]),
     session: Session = Depends(get_session),
     user: CurrentUser = Depends(get_current_user),
 ):
+    tags = {item.strip().lower() for item in tag if item.strip()}
+    suffixes = {item.strip().lower().lstrip(".") for item in suffix if item.strip(".")}
     rows = []
+    project_ids = set(project_id)
     for dataset in session.scalars(select(Dataset).order_by(Dataset.created_at.desc())).all():
         project = project_for(session, dataset.project_id)
-        if project_id and dataset.project_id != project_id:
+        if project_ids and (
+            (dataset.project_id is None and "private" not in project_ids)
+            or (dataset.project_id is not None and dataset.project_id not in project_ids)
+        ):
             continue
         version = (
             latest_version(session, dataset)
@@ -626,14 +693,71 @@ def list_datasets(
         if (
             query.lower()
             not in " ".join(
-                [version.title, version.description, version.dataset_type, *version.keywords]
+                [version.title, version.description, version.dataset_type, *version_keyword_labels(session, version.id)]
             ).lower()
         ):
             continue
+        if title.lower() not in version.title.lower():
+            continue
         if dataset_type and version.dataset_type != dataset_type:
             continue
+        keyword_values = set(session.scalars(
+            select(Keyword.normalized)
+            .join(DatasetVersionKeyword, DatasetVersionKeyword.keyword_id == Keyword.id)
+            .where(DatasetVersionKeyword.version_id == version.id)
+        ))
+        if tags and tags.isdisjoint(keyword_values):
+            continue
+        if suffixes:
+            version_suffixes = set(session.scalars(
+                select(FileExtension.value)
+                .join(Distribution, Distribution.file_extension_id == FileExtension.id)
+                .where(Distribution.version_id == version.id)
+            ))
+            if suffixes.isdisjoint(version_suffixes):
+                continue
         rows.append(dataset_out(session, dataset, version))
     return rows
+
+
+@app.get(
+    "/api/v1/datasets/search-facets",
+    response_model=DatasetSearchFacetsOut,
+    tags=["datasets"],
+)
+def dataset_search_facets(
+    session: Session = Depends(get_session), user: CurrentUser = Depends(get_current_user)
+):
+    projects = list_projects(session, user)
+    visible_version_ids: list[str] = []
+    for dataset in session.scalars(select(Dataset)).all():
+        project = project_for(session, dataset.project_id)
+        version = (
+            latest_version(session, dataset)
+            if (user.has("admin") or user.has("auditor") or dataset.owner_subject == user.subject)
+            else get_version(session, dataset)
+        )
+        if can_view_version_metadata(session, user, dataset, project, version):
+            visible_version_ids.append(version.id)
+
+    if not visible_version_ids:
+        return {"projects": projects, "keywords": [], "suffixes": []}
+
+    keywords = session.scalars(
+        select(Keyword.label)
+        .join(DatasetVersionKeyword, DatasetVersionKeyword.keyword_id == Keyword.id)
+        .where(DatasetVersionKeyword.version_id.in_(visible_version_ids))
+        .distinct()
+        .order_by(Keyword.label)
+    ).all()
+    suffixes = session.scalars(
+        select(FileExtension.value)
+        .join(Distribution, Distribution.file_extension_id == FileExtension.id)
+        .where(Distribution.version_id.in_(visible_version_ids))
+        .distinct()
+        .order_by(FileExtension.value)
+    ).all()
+    return {"projects": projects, "keywords": keywords, "suffixes": suffixes}
 
 
 @app.get(
@@ -941,7 +1065,7 @@ def dcat_jsonld(
             "dct:identifier": dataset.id,
             "dct:title": version.title,
             "dct:description": version.description,
-            "dcat:keyword": version.keywords,
+            "dcat:keyword": version_keyword_labels(session, version.id),
             "dcat:version": version.version_label,
             "dcat:distribution": [
                 {

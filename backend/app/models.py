@@ -81,7 +81,6 @@ class DatasetVersion(Base):
     title: Mapped[str] = mapped_column(String(300), index=True)
     description: Mapped[str] = mapped_column(Text)
     dataset_type: Mapped[str] = mapped_column(String(100), index=True)
-    keywords: Mapped[list[str]] = mapped_column(JSON, default=list)
     creator: Mapped[str] = mapped_column(String(255))
     version_label: Mapped[str] = mapped_column(String(100), default="1.0")
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
@@ -146,4 +145,30 @@ class Distribution(Base):
     content_size: Mapped[int] = mapped_column(Integer)
     media_type: Mapped[str] = mapped_column(String(255))
     sha256: Mapped[str] = mapped_column(String(64))
+    file_extension_id: Mapped[str | None] = mapped_column(
+        ForeignKey("file_extensions.id"), nullable=True, index=True
+    )
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+
+
+class Keyword(Base):
+    __tablename__ = "keywords"
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=uuid)
+    normalized: Mapped[str] = mapped_column(String(80), unique=True, index=True)
+    label: Mapped[str] = mapped_column(String(80))
+
+
+class DatasetVersionKeyword(Base):
+    __tablename__ = "dataset_version_keywords"
+    version_id: Mapped[str] = mapped_column(
+        ForeignKey("dataset_versions.id", ondelete="CASCADE"), primary_key=True
+    )
+    keyword_id: Mapped[str] = mapped_column(
+        ForeignKey("keywords.id", ondelete="CASCADE"), primary_key=True, index=True
+    )
+
+
+class FileExtension(Base):
+    __tablename__ = "file_extensions"
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=uuid)
+    value: Mapped[str] = mapped_column(String(80), unique=True, index=True)

@@ -11,6 +11,19 @@ import type {
   Dataset,
 } from "./types";
 
+export type DatasetSearchFilters = {
+  title?: string;
+  projectIds?: string[];
+  tags?: string[];
+  suffixes?: string[];
+};
+
+export type DatasetSearchFacets = {
+  projects: Project[];
+  keywords: string[];
+  suffixes: string[];
+};
+
 export class ApiError extends Error {
   constructor(
     message: string,
@@ -44,8 +57,16 @@ export const api = {
   me: () => request<CurrentUser>("/me"),
   users: () => request<DirectoryUser[]>("/users"),
   projects: () => request<Project[]>("/projects"),
-  datasets: (query = "", signal?: AbortSignal) =>
-    request<Dataset[]>(`/datasets?query=${encodeURIComponent(query)}`, { signal }),
+  datasetSearchFacets: () => request<DatasetSearchFacets>("/datasets/search-facets"),
+  datasets: (query = "", filters: DatasetSearchFilters = {}, signal?: AbortSignal) => {
+    const params = new URLSearchParams();
+    if (query) params.set("query", query);
+    if (filters.title) params.set("title", filters.title);
+    filters.projectIds?.forEach((projectId) => params.append("project_id", projectId));
+    filters.tags?.forEach((tag) => params.append("tag", tag));
+    filters.suffixes?.forEach((suffix) => params.append("suffix", suffix));
+    return request<Dataset[]>(`/datasets?${params.toString()}`, { signal });
+  },
   dataset: (id: string, version?: number) =>
     request<Dataset>(
       version === undefined

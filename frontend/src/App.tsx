@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { api } from "./api";
+import type { DatasetSearchFacets, DatasetSearchFilters } from "./api";
 import { keycloak } from "./auth";
 import { AdminProjects } from "./features/admin";
 import {
@@ -84,19 +85,26 @@ export function App() {
   const [initialLoading, setInitialLoading] = useState(true);
   const [searchLoading, setSearchLoading] = useState(false);
   const [query, setQuery] = useState("");
+  const [filters, setFilters] = useState<DatasetSearchFilters>({});
+  const [searchFacets, setSearchFacets] = useState<DatasetSearchFacets>({
+    projects: [],
+    keywords: [],
+    suffixes: [],
+  });
   const [menuOpen, setMenuOpen] = useState(false);
 
   const refresh = useCallback(async () => {
     const me = await api.me();
     const canApprove = me.roles.includes("approver") || me.roles.includes("admin");
     const isAdmin = me.roles.includes("admin");
-    const [projectItems, datasetItems, notificationItems, approvalItems, users] =
+    const [projectItems, datasetItems, notificationItems, approvalItems, users, facets] =
       await Promise.all([
         api.projects(),
         api.datasets(),
         api.notifications(),
         canApprove ? api.approvals() : Promise.resolve([]),
         isAdmin ? api.users() : Promise.resolve([]),
+        api.datasetSearchFacets(),
       ]);
     setUser(me);
     setProjects(projectItems);
@@ -104,6 +112,7 @@ export function App() {
     setNotifications(notificationItems);
     setApprovals(approvalItems);
     setDirectoryUsers(users);
+    setSearchFacets(facets);
   }, []);
 
   const applyRoute = useCallback(async (route: Route) => {
@@ -153,7 +162,7 @@ export function App() {
     const timer = window.setTimeout(() => {
       setSearchLoading(true);
       api
-        .datasets(query, controller.signal)
+        .datasets(query, filters, controller.signal)
         .then(setDatasets)
         .catch((error) => {
           if (error.name !== "AbortError") setMessage(error.message);
@@ -166,7 +175,7 @@ export function App() {
       window.clearTimeout(timer);
       controller.abort();
     };
-  }, [initialLoading, page, query]);
+  }, [filters, initialLoading, page, query]);
 
   const navigate = (next: NavigationPage) => {
     window.history.pushState({}, "", pagePaths[next]);
@@ -354,8 +363,11 @@ export function App() {
             <DatasetList
               items={datasets}
               loading={searchLoading}
+              filters={filters}
+              facets={searchFacets}
               onOpen={openDataset}
               onUpload={() => navigate("upload")}
+              onFiltersChange={setFilters}
             />
           )}
           {page === "upload" && (

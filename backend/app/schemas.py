@@ -81,6 +81,12 @@ class DatasetOut(BaseModel):
     version: DatasetVersionOut
 
 
+class DatasetSearchFacetsOut(BaseModel):
+    projects: list[ProjectOut]
+    keywords: list[str]
+    suffixes: list[str]
+
+
 class NotificationOut(BaseModel):
     id: str
     kind: str

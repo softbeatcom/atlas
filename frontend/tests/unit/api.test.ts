@@ -12,4 +12,11 @@ describe("dataset API", () => {
     expect(fetchMock.mock.calls[0][0]).toBe("http://localhost:8000/api/v1/datasets/ds_upload/versions");
     expect((fetchMock.mock.calls[0][1] as RequestInit).body).toBe(form);
   });
+
+  it("serializes advanced dataset search filters", async () => {
+    const fetchMock = vi.fn().mockResolvedValue(new Response("[]", { status: 200 }));
+    vi.stubGlobal("fetch", fetchMock);
+    await api.datasets("climate", { title: "Messung", projectIds: ["private", "project-1"], tags: ["Klima", "Messung"], suffixes: ["csv", "json"] });
+    expect(fetchMock.mock.calls[0][0]).toBe("http://localhost:8000/api/v1/datasets?query=climate&title=Messung&project_id=private&project_id=project-1&tag=Klima&tag=Messung&suffix=csv&suffix=json");
+  });
 });

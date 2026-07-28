@@ -8,7 +8,9 @@ from app.models import (
     AuditEvent,
     Dataset,
     DatasetVersion,
+    DatasetVersionKeyword,
     Distribution,
+    Keyword,
     MembershipRole,
     Project,
     ProjectMembership,
@@ -33,7 +35,6 @@ def session_with_dataset():
         title="Bericht",
         description="Test",
         dataset_type="report",
-        keywords=["test"],
         creator="alice",
         version_label="1.0",
     )
@@ -47,11 +48,14 @@ def session_with_dataset():
         media_type="text/plain",
         sha256="0" * 64,
     )
+    keyword = Keyword(id="keyword-1", normalized="test", label="test")
     session.add_all(
         [
             dataset,
             version,
             distribution,
+            keyword,
+            DatasetVersionKeyword(version_id=version.id, keyword_id=keyword.id),
             ProjectMembership(project_id=project.id, subject="sub-bob", role=MembershipRole.MEMBER),
         ]
     )

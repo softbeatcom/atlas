@@ -1,5 +1,6 @@
-import { useEffect, useId, useState } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 import { api } from "../api";
+import type { DatasetSearchFacets, DatasetSearchFilters } from "../api";
 import type { CurrentUser, Dataset, Distribution, Project } from "../types";
 import {
   formatDate,
@@ -11,13 +12,19 @@ import {
 export function DatasetList({
   items,
   loading,
+  filters,
+  facets,
   onOpen,
   onUpload,
+  onFiltersChange,
 }: {
   items: Dataset[];
   loading: boolean;
+  filters: DatasetSearchFilters;
+  facets: DatasetSearchFacets;
   onOpen: (id: string, version: number) => void;
   onUpload: () => void;
+  onFiltersChange: (filters: DatasetSearchFilters) => void;
 }) {
   return (
     <>
@@ -27,27 +34,13 @@ export function DatasetList({
           <h1>Datensätze</h1>
           <p>Durchsuche veröffentlichte Daten und Projektergebnisse.</p>
         </div>
-        <button className="primary" type="button" onClick={onUpload}>
-          <span aria-hidden="true">＋</span> Datensatz anlegen
-        </button>
       </div>
 
-      <div className="stats" aria-label="Datensatzübersicht">
-        <div>
-          <strong>{items.length}</strong>
-          <span>sichtbare Datensätze</span>
-        </div>
-        <div>
-          <strong>{items.filter((item) => item.version.status === "draft").length}</strong>
-          <span>Entwürfe</span>
-        </div>
-        <div>
-          <strong>
-            {items.filter((item) => item.version.status === "published").length}
-          </strong>
-          <span>veröffentlicht</span>
-        </div>
-      </div>
+      <DatasetSearchFiltersPanel
+        filters={filters}
+        facets={facets}
+        onChange={onFiltersChange}
+      />
 
       <section className="card list dataset-list" aria-busy={loading}>
         <div className="list-head">
@@ -102,6 +95,130 @@ export function DatasetList({
       </section>
     </>
   );
+}
+
+function DatasetSearchFiltersPanel({
+  filters,
+  facets,
+  onChange,
+}: {
+  filters: DatasetSearchFilters;
+  facets: DatasetSearchFacets;
+  onChange: (filters: DatasetSearchFilters) => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const projectIds = filters.projectIds ?? [];
+  const tags = filters.tags ?? [];
+  const suffixes = filters.suffixes ?? [];
+  const hasFilters = Boolean(filters.title || projectIds.length || tags.length || suffixes.length);
+  const projects = [
+    { value: "private", label: "Privat" },
+    ...facets.projects.map((project) => ({ value: project.id, label: project.name })),
+  ];
+
+  return (
+    <section className="card search-filters" aria-label="Erweiterte Suche">
+      <div className="search-filters-head">
+        <div>
+          <h2>Erweiterte Suche</h2>
+          <p>Grenze Ergebnisse nach Metadaten und Dateien ein.</p>
+        </div>
+        <button type="button" className="secondary" aria-expanded={open} onClick={() => setOpen(!open)}>
+          {open ? "Filter ausblenden" : "Filter anzeigen"}
+        </button>
+      </div>
+      {open && (
+        <div className="search-filter-fields">
+          <label className="search-title-field">
+            Titel
+            <input
+              type="search"
+              value={filters.title ?? ""}
+              placeholder="Titel enthält …"
+              onChange={(event) => onChange({ ...filters, title: event.target.value || undefined })}
+            />
+          </label>
+          <MultiSelectDropdown
+            label="Projekt"
+            options={projects}
+            values={projectIds}
+            onChange={(values) => onChange({ ...filters, projectIds: values.length ? values : undefined })}
+          />
+          <MultiSelectDropdown
+            label="Schlagwörter"
+            values={tags}
+            options={facets.keywords.map((value) => ({ value, label: value }))}
+            onChange={(values) => onChange({ ...filters, tags: values.length ? values : undefined })}
+          />
+          <MultiSelectDropdown
+            label="Dateiendungen"
+            values={suffixes}
+            options={facets.suffixes.map((value) => ({ value, label: `.${value}` }))}
+            onChange={(values) => onChange({ ...filters, suffixes: values.length ? values : undefined })}
+          />
+        </div>
+      )}
+      {hasFilters && (
+        <div className="active-filters" aria-label="Aktive Filter">
+          {filters.title && <FilterChip label={`Titel: ${filters.title}`} onRemove={() => onChange({ ...filters, title: undefined })} />}
+          {projectIds.map((projectId) => <FilterChip key={projectId} label={`Projekt: ${projects.find((project) => project.value === projectId)?.label ?? projectId}`} onRemove={() => onChange({ ...filters, projectIds: projectIds.filter((item) => item !== projectId) })} />)}
+          {tags.map((tag) => <FilterChip key={tag} label={`Tag: ${tag}`} onRemove={() => onChange({ ...filters, tags: tags.filter((item) => item !== tag) })} />)}
+          {suffixes.map((suffix) => <FilterChip key={suffix} label={`.${suffix}`} onRemove={() => onChange({ ...filters, suffixes: suffixes.filter((item) => item !== suffix) })} />)}
+          <button type="button" className="link-button" onClick={() => onChange({})}>Filter zurücksetzen</button>
+        </div>
+      )}
+    </section>
+  );
+}
+
+function MultiSelectDropdown({ label, options, values, onChange }: { label: string; options: { value: string; label: string }[]; values: string[]; onChange: (values: string[]) => void }) {
+  const [open, setOpen] = useState(false);
+  const [search, setSearch] = useState("");
+  const container = useRef<HTMLDivElement>(null);
+  const menuId = useId();
+  const visibleOptions = options.filter((option) => option.label.toLocaleLowerCase().includes(search.toLocaleLowerCase()));
+
+  useEffect(() => {
+    if (!open) return;
+    const closeOnOutsideClick = (event: MouseEvent) => {
+      if (!container.current?.contains(event.target as Node)) setOpen(false);
+    };
+    const closeOnEscape = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setOpen(false);
+    };
+    document.addEventListener("mousedown", closeOnOutsideClick);
+    document.addEventListener("keydown", closeOnEscape);
+    return () => {
+      document.removeEventListener("mousedown", closeOnOutsideClick);
+      document.removeEventListener("keydown", closeOnEscape);
+    };
+  }, [open]);
+
+  const toggleValue = (value: string) => onChange(
+    values.includes(value) ? values.filter((item) => item !== value) : [...values, value],
+  );
+  const summary = values.length === 0 ? "Alle auswählen" : `${values.length} ausgewählt`;
+
+  return <div className="search-select" ref={container}>
+    <span className="search-select-label">{label}</span>
+    <button type="button" className="search-select-trigger" aria-label={`${label}: ${summary}`} aria-expanded={open} aria-controls={menuId} aria-haspopup="listbox" onClick={() => setOpen(!open)}>
+      <span>{summary}</span><span aria-hidden="true">⌄</span>
+    </button>
+    {open && <div className="search-select-menu" id={menuId} role="listbox" aria-label={`${label} auswählen`} aria-multiselectable="true">
+      <input autoFocus type="search" value={search} placeholder={`${label} suchen …`} aria-label={`${label} durchsuchen`} onChange={(event) => setSearch(event.target.value)} />
+      <div className="search-select-options">
+        {visibleOptions.map((option) => <label key={option.value} className="search-select-option">
+          <input type="checkbox" checked={values.includes(option.value)} onChange={() => toggleValue(option.value)} />
+          <span>{option.label}</span>
+        </label>)}
+        {visibleOptions.length === 0 && <p className="search-select-empty">Keine Werte gefunden.</p>}
+      </div>
+    </div>}
+  </div>;
+}
+
+function FilterChip({ label, onRemove }: { label: string; onRemove: () => void }) {
+  return <span className="filter-chip">{label}<button type="button" aria-label={`${label} entfernen`} onClick={onRemove}>×</button></span>;
 }
 
 export function DatasetForm({

@@ -27,10 +27,11 @@ def upgrade() -> None:
 
     op.rename_table("resources", "datasets")
     op.rename_table("resource_versions", "dataset_versions")
-    op.alter_column("dataset_versions", "resource_id", new_column_name="dataset_id")
-    op.alter_column("dataset_versions", "resource_type", new_column_name="dataset_type")
-    for column in ("original_filename", "storage_key", "content_size", "media_type", "sha256"):
-        op.drop_column("dataset_versions", column)
+    with op.batch_alter_table("dataset_versions") as batch:
+        batch.alter_column("resource_id", new_column_name="dataset_id")
+        batch.alter_column("resource_type", new_column_name="dataset_type")
+        for column in ("original_filename", "storage_key", "content_size", "media_type", "sha256"):
+            batch.drop_column(column)
     op.alter_column("notifications", "resource_id", new_column_name="dataset_id")
     op.alter_column("audit_events", "resource_id", new_column_name="dataset_id")
     op.create_table(
