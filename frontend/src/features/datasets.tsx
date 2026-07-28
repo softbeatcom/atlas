@@ -1,6 +1,6 @@
 import { useEffect, useId, useState } from "react";
 import { api } from "../api";
-import type { CurrentUser, Project, Resource } from "../types";
+import type { CurrentUser, Dataset, Distribution, Project } from "../types";
 import {
   formatDate,
   formatSize,
@@ -8,13 +8,13 @@ import {
   VisibilityBadge,
 } from "../ui";
 
-export function ResourceList({
+export function DatasetList({
   items,
   loading,
   onOpen,
   onUpload,
 }: {
-  items: Resource[];
+  items: Dataset[];
   loading: boolean;
   onOpen: (id: string, version: number) => void;
   onUpload: () => void;
@@ -24,18 +24,18 @@ export function ResourceList({
       <div className="title-row">
         <div>
           <div className="eyebrow">Repository</div>
-          <h1>Ressourcen</h1>
-          <p>Durchsuche veröffentlichte Dokumente, Daten und Projektergebnisse.</p>
+          <h1>Datensätze</h1>
+          <p>Durchsuche veröffentlichte Daten und Projektergebnisse.</p>
         </div>
         <button className="primary" type="button" onClick={onUpload}>
-          <span aria-hidden="true">＋</span> Ressource anlegen
+          <span aria-hidden="true">＋</span> Datensatz anlegen
         </button>
       </div>
 
-      <div className="stats" aria-label="Ressourcenübersicht">
+      <div className="stats" aria-label="Datensatzübersicht">
         <div>
           <strong>{items.length}</strong>
-          <span>sichtbare Ressourcen</span>
+          <span>sichtbare Datensätze</span>
         </div>
         <div>
           <strong>{items.filter((item) => item.version.status === "draft").length}</strong>
@@ -49,36 +49,35 @@ export function ResourceList({
         </div>
       </div>
 
-      <section className="card list resource-list" aria-busy={loading}>
+      <section className="card list dataset-list" aria-busy={loading}>
         <div className="list-head">
-          <h2>Ressourcen</h2>
+          <h2>Datensätze</h2>
           <span>{loading ? "Suche …" : `${items.length} Treffer`}</span>
         </div>
-        <div className="resource-columns" aria-hidden="true">
+        <div className="dataset-columns" aria-hidden="true">
           <span>Typ</span>
-          <span>Ressource</span>
-          <span className="resource-project">Projekt</span>
-          <span className="resource-visibility">Sichtbarkeit</span>
-          <span className="resource-status">Status</span>
+          <span>Datensatz</span>
+          <span className="dataset-project">Projekt</span>
+          <span className="dataset-visibility">Sichtbarkeit</span>
+          <span className="dataset-status">Status</span>
         </div>
         {items.map((item) => (
           <button
-            className="resource"
+            className="dataset-row"
             key={`${item.id}-${item.version.number}`}
             type="button"
             onClick={() => onOpen(item.id, item.version.number)}
           >
             <span className="file" aria-hidden="true">
-              {item.version.filename.split(".").pop()?.slice(0, 4).toUpperCase()}
+              {item.version.distributions[0]?.filename.split(".").pop()?.slice(0, 4).toUpperCase() ?? "—"}
             </span>
-            <span className="resource-title">
+            <span className="dataset-title">
               <b>{item.version.title}</b>
               <small>
-                {item.version.creator} · v{item.version.version_label} ·{" "}
-                {formatSize(item.version.content_size)}
+                {item.version.creator} · v{item.version.version_label} · {item.version.distribution_count} Dateien · {formatSize(item.version.total_size)}
               </small>
             </span>
-            <span className="meta resource-project">
+            <span className="meta dataset-project">
               <span
                 className="project-name"
                 title={item.project?.name ?? "Privat"}
@@ -89,59 +88,62 @@ export function ResourceList({
                 {formatDate(item.version.published_at ?? item.version.created_at)}
               </small>
             </span>
-            <span className="resource-visibility">
+            <span className="dataset-visibility">
               <VisibilityBadge visibility={item.project?.visibility} />
             </span>
-            <span className="resource-status">
+            <span className="dataset-status">
               <StatusBadge status={item.version.status} />
             </span>
           </button>
         ))}
         {!loading && items.length === 0 && (
-          <div className="empty">Keine Ressourcen gefunden.</div>
+          <div className="empty">Keine Datensätze gefunden.</div>
         )}
       </section>
     </>
   );
 }
 
-export function ResourceForm({
+export function DatasetForm({
   projects,
   base,
   onDone,
   onError,
 }: {
   projects: Project[];
-  base?: Resource;
-  onDone: (resource: Resource) => Promise<void> | void;
+  base?: Dataset;
+  onDone: (dataset: Dataset) => Promise<void> | void;
   onError: (message: string) => void;
 }) {
   const [busy, setBusy] = useState(false);
-  const [filename, setFilename] = useState("");
+  const [files, setFiles] = useState<File[]>([]);
   const fileHintId = useId();
   const isNewVersion = Boolean(base);
 
   const submit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    const fileInput = event.currentTarget.elements.namedItem("file");
-    const file =
-      fileInput instanceof HTMLInputElement ? fileInput.files?.[0] : undefined;
+    const selected = files;
     const form = new FormData(event.currentTarget);
-    if (!file?.size) {
-      onError("Bitte wähle eine Datei.");
+    if (!selected.length) {
+      onError("Bitte wähle mindestens eine Datei.");
       return;
     }
-    if (file.size > 100 * 1024 * 1024) {
-      onError("SoftBeat Atlas unterstützt Dateien bis 100 MiB.");
+    if (selected.length > 100 || selected.some((file) => file.size > 100 * 1024 * 1024)) {
+      onError("Ein Datensatz darf höchstens 100 Dateien mit jeweils 100 MiB enthalten.");
       return;
     }
-    form.set("file", file, file.name);
+    if (selected.reduce((total, file) => total + file.size, 0) > 1024 * 1024 * 1024) {
+      onError("Die Dateien einer Version dürfen zusammen höchstens 1 GiB groß sein.");
+      return;
+    }
+    form.delete("files");
+    selected.forEach((file) => form.append("files", file, file.name));
     setBusy(true);
     try {
-      const resource = base
+      const dataset = base
         ? await api.createVersion(base.id, form)
-        : await api.createResource(form);
-      await onDone(resource);
+        : await api.createDataset(form);
+      await onDone(dataset);
     } catch (error) {
       onError(error instanceof Error ? error.message : "Upload fehlgeschlagen");
     } finally {
@@ -151,19 +153,19 @@ export function ResourceForm({
 
   const knownTypes = ["Bericht", "Spezifikation", "Datensatz", "Modell"];
   const typeOptions =
-    base && !knownTypes.includes(base.version.resource_type)
-      ? [base.version.resource_type, ...knownTypes]
+    base && !knownTypes.includes(base.version.dataset_type)
+      ? [base.version.dataset_type, ...knownTypes]
       : knownTypes;
 
   return (
     <>
       <div className="eyebrow">
-        {isNewVersion ? "Neue Version" : "Neue Ressource"}
+        {isNewVersion ? "Neue Version" : "Neuer Datensatz"}
       </div>
       <h1>
         {isNewVersion
           ? `${base?.version.title} überarbeiten`
-          : "Datei und Metadaten anlegen"}
+          : "Dateien und Metadaten anlegen"}
       </h1>
       <p>
         {isNewVersion
@@ -173,19 +175,20 @@ export function ResourceForm({
 
       <form className="form-grid" onSubmit={submit}>
         <section className="card form">
-          <h2>1. Datei hochladen</h2>
+          <h2>1. Dateien hochladen</h2>
           <label className="drop">
             <input
               type="file"
-              name="file"
-              required
+              name="files"
+              multiple
               aria-describedby={fileHintId}
-              onChange={(event) => setFilename(event.target.files?.[0]?.name ?? "")}
+              onChange={(event) => setFiles(Array.from(event.target.files ?? []))}
             />
-            <b>Datei auswählen</b>
-            <span id={fileHintId}>Alle Formate bis 100 MiB</span>
-            {filename && <span className="selected-file">Ausgewählt: {filename}</span>}
+            <b>Dateien auswählen</b>
+            <span id={fileHintId}>Bis zu 100 Dateien, je 100 MiB und zusammen 1 GiB</span>
+            {files.length > 0 && <span className="selected-file">{files.length} Dateien ausgewählt · {formatSize(files.reduce((total, file) => total + file.size, 0))}</span>}
           </label>
+          {files.length > 0 && <ul className="file-list">{files.map((file, index) => <li key={`${file.name}-${index}`}><span>{file.name} · {formatSize(file.size)}</span><button type="button" onClick={() => setFiles((current) => current.filter((_, itemIndex) => itemIndex !== index))}>Entfernen</button></li>)}</ul>}
 
           <h2>2. Basisinformationen</h2>
           <label>
@@ -203,11 +206,11 @@ export function ResourceForm({
           </label>
           <div className="two">
             <label>
-              Ressourcentyp *
+              Datensatztyp *
               <select
-                name="resource_type"
+                name="dataset_type"
                 required
-                defaultValue={base?.version.resource_type ?? knownTypes[0]}
+                defaultValue={base?.version.dataset_type ?? knownTypes[0]}
               >
                 {typeOptions.map((type) => (
                   <option key={type}>{type}</option>
@@ -262,7 +265,7 @@ export function ResourceForm({
         <aside className="card workflow">
           <h2>Weiterer Ablauf</h2>
           <p>
-            Private Ressourcen und Projekte ohne Freigabepflicht kannst du selbst
+            Private Datensätze und Projekte ohne Freigabepflicht kannst du selbst
             veröffentlichen.
           </p>
           <p>
@@ -280,7 +283,7 @@ type Preview =
   | { kind: "text"; content: string }
   | null;
 
-export function ResourceDetail({
+export function DatasetDetail({
   item,
   user,
   onBack,
@@ -289,7 +292,7 @@ export function ResourceDetail({
   onReload,
   onError,
 }: {
-  item: Resource;
+  item: Dataset;
   user: CurrentUser;
   onBack: () => void;
   onOpenVersion: (number: number) => void;
@@ -298,7 +301,7 @@ export function ResourceDetail({
   onError: (message: string) => void;
 }) {
   const version = item.version;
-  const [versions, setVersions] = useState<Resource[]>([]);
+  const [versions, setVersions] = useState<Dataset[]>([]);
   const [preview, setPreview] = useState<Preview>(null);
   const [busy, setBusy] = useState(false);
   const [showRejection, setShowRejection] = useState(false);
@@ -306,7 +309,7 @@ export function ResourceDetail({
   useEffect(() => {
     let active = true;
     api
-      .resourceVersions(item.id)
+      .datasetVersions(item.id)
       .then((result) => active && setVersions(result))
       .catch((error) => onError(error.message));
     return () => {
@@ -356,10 +359,10 @@ export function ResourceDetail({
     }
   };
 
-  const openContent = async () => {
+  const openContent = async (distribution: Distribution) => {
     setBusy(true);
     try {
-      const result = await api.content(item.id, version.number);
+      const result = await api.content(item.id, version.number, distribution.id);
       if (result.type === "text/plain") {
         setPreview({ kind: "text", content: await result.blob.text() });
       } else if (result.type === "application/pdf") {
@@ -368,7 +371,7 @@ export function ResourceDetail({
         const url = URL.createObjectURL(result.blob);
         const link = document.createElement("a");
         link.href = url;
-        link.download = version.filename;
+        link.download = distribution.filename;
         link.click();
         URL.revokeObjectURL(url);
       }
@@ -388,13 +391,13 @@ export function ResourceDetail({
     canManage &&
     version.number === item.latest_number &&
     (version.status === "published" || version.status === "rejected");
-  const stablePath = `/resources/${item.id}/versions/${version.number}`;
+  const stablePath = `/datasets/${item.id}/versions/${version.number}`;
   const stableUrl = `${window.location.origin}${stablePath}`;
 
   return (
     <>
       <button className="back" type="button" onClick={onBack}>
-        ← Zurück zu Ressourcen
+        ← Zurück zu Datensätzen
       </button>
       <div className="title-row">
         <div>
@@ -423,31 +426,19 @@ export function ResourceDetail({
         <section className="card form">
           <h2>Metadaten</h2>
           <dl>
-            <dt>Ressourcentyp</dt>
-            <dd>{version.resource_type}</dd>
+          <dt>Datensatztyp</dt>
+            <dd>{version.dataset_type}</dd>
             <dt>Schlagwörter</dt>
             <dd>{version.keywords.join(", ") || "—"}</dd>
             <dt>Ersteller:in</dt>
             <dd>{version.creator}</dd>
             <dt>Projekt</dt>
             <dd>{item.project?.name ?? "Privat"}</dd>
-            <dt>Datei</dt>
-            <dd>
-              {version.filename} · {formatSize(version.content_size)}
-            </dd>
-            <dt>SHA-256</dt>
-            <dd className="hash">{version.sha256}</dd>
+          <dt>Dateien</dt>
+          <dd>{version.distribution_count} · {formatSize(version.total_size)}</dd>
           </dl>
 
           <div className="actions">
-            <button
-              className="secondary"
-              type="button"
-              disabled={busy}
-              onClick={openContent}
-            >
-              Vorschau / Download
-            </button>
             {version.status === "draft" && canManage && (
               <button
                 className="primary"
@@ -506,6 +497,15 @@ export function ResourceDetail({
             </form>
           )}
 
+          <div className="distribution-list">
+            {version.distributions.map((distribution) => (
+              <div className="distribution" key={distribution.id}>
+                <span>{distribution.filename} · {formatSize(distribution.content_size)}</span>
+                <button className="secondary compact" type="button" disabled={busy} onClick={() => openContent(distribution)}>Vorschau / Download</button>
+              </div>
+            ))}
+          </div>
+
           {preview?.kind === "text" && (
             <pre className="text-preview">{preview.content}</pre>
           )}
@@ -513,7 +513,7 @@ export function ResourceDetail({
             <iframe
               className="preview"
               src={preview.url}
-              title={`Vorschau von ${version.filename}`}
+              title="Dateivorschau"
               sandbox=""
             />
           )}

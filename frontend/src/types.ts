@@ -9,25 +9,33 @@ export type Project = {
   approval_required: boolean;
 };
 
-export type ResourceVersion = {
-  number: number;
-  status: VersionStatus;
-  title: string;
-  description: string;
-  resource_type: string;
-  keywords: string[];
-  creator: string;
-  version_label: string;
+export type Distribution = {
+  id: string;
+  position: number;
   filename: string;
   content_size: number;
   media_type: string;
   sha256: string;
+};
+
+export type DatasetVersion = {
+  number: number;
+  status: VersionStatus;
+  title: string;
+  description: string;
+  dataset_type: string;
+  keywords: string[];
+  creator: string;
+  version_label: string;
+  distributions: Distribution[];
+  distribution_count: number;
+  total_size: number;
   created_at: string;
   modified_at: string;
   published_at: string | null;
 };
 
-export type Resource = {
+export type Dataset = {
   id: string;
   project: Project | null;
   owner: string;
@@ -35,7 +43,7 @@ export type Resource = {
   latest_number: number;
   is_current: boolean;
   newer_version: number | null;
-  version: ResourceVersion;
+  version: DatasetVersion;
 };
 
 export type CurrentUser = {
@@ -48,7 +56,7 @@ export type Notification = {
   id: string;
   kind: string;
   message: string;
-  resource_id: string;
+  dataset_id: string;
   version_number: number;
   read: boolean;
   created_at: string;
@@ -70,7 +78,7 @@ export type AuditEvent = {
   id: string;
   actor_subject: string;
   action: string;
-  resource_id: string | null;
+  dataset_id: string | null;
   version_number: number | null;
   details: Record<string, unknown>;
   created_at: string;

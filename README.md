@@ -2,10 +2,10 @@
 
 **SoftBeat Atlas – FAIR repository for organizational knowledge**
 
-SoftBeat Atlas ist ein community-orientiertes Repository für versionierte Unternehmensressourcen. Der MVP umfasst Projektrechte, lokale Dateiablage, Metadatensuche, Freigabe mit Vier-Augen-Prinzip, Benachrichtigungen, Audit-Ereignisse und stabile Versions-URLs.
+SoftBeat Atlas ist ein community-orientiertes Repository für versionierte Unternehmensdatensätze. Ein Datensatzstand enthält bis zu 100 Dateien (DCAT-Distributionen), die gemeinsam geprüft und veröffentlicht werden.
 
 SoftBeat Atlas orientiert sich an den FAIR-Prinzipien: **Findable, Accessible,
-Interoperable, Reusable**. Persistent referenzierbare Ressourcen, Metadaten,
+Interoperable, Reusable**. Persistent referenzierbare Datensätze, Metadaten,
 kontrollierter Zugriff und semantische Erweiterungen sollen Wissen für Menschen
 und Maschinen auffindbar und wiederverwendbar machen. FAIR ist dabei ein
 Entwicklungsziel und keine formale Zertifizierung. Siehe die [FAIR-Prinzipien
@@ -72,7 +72,7 @@ docker compose run --rm --no-deps --user 0 backend \
   find /data/storage -mindepth 1 -delete
 ```
 
-**Achtung:** Dadurch bleiben Ressourcen-Metadaten in PostgreSQL erhalten, deren
+**Achtung:** Dadurch bleiben Datensatz-Metadaten in PostgreSQL erhalten, deren
 Dateien nicht mehr existieren. Das eignet sich nur für gezielte Tests.
 
 Für einen sauberen Entwicklungsreset entferne Datenbank und Rohdateien
@@ -84,6 +84,11 @@ docker compose run --rm --no-deps --user 0 backend \
   find /data/storage -mindepth 1 -delete
 docker compose up --build
 ```
+
+Die Umstellung von der früheren Einzeldatei-Struktur auf Mehrdatei-Datensätze
+setzt diesen vollständigen Reset voraus. Die Migration beendet sich bewusst mit
+einem Hinweis, wenn sie bestehende Versionen findet; sie löscht keine
+Bestandsdaten automatisch.
 
 ## Docker-Deployment stoppen
 
@@ -173,6 +178,20 @@ Migrationen lassen sich ohne PostgreSQL-Verbindung als SQL prüfen:
 cd backend
 .venv/bin/alembic upgrade head --sql
 ```
+
+## Datensatz-API und DCAT
+
+`POST /api/v1/datasets` und `POST /api/v1/datasets/{id}/versions` akzeptieren
+mehrere Multipart-Felder namens `files`. Jede Version enthält den vollständigen,
+unveränderlichen Dateisatz; sie übernimmt keine Dateien aus der vorherigen
+Version. Pro Version gelten maximal 100 Dateien, 100 MiB je Datei und 1 GiB
+insgesamt.
+
+Für berechtigte Nutzer liefert
+`GET /api/v1/datasets/{id}/versions/{number}/dcat.jsonld` den exakten Stand
+als DCAT JSON-LD. Die Download-URLs bleiben ebenfalls berechtigungsgeschützt.
+Setze `PUBLIC_API_URL` auf die von Nutzenden erreichbare API-Basis-URL, damit
+sie außerhalb der lokalen Entwicklung korrekt sind.
 
 ## Produktionskonfiguration
 

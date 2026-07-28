@@ -8,7 +8,7 @@ import type {
   MembershipRole,
   Notification,
   Project,
-  Resource,
+  Dataset,
 } from "./types";
 
 export class ApiError extends Error {
@@ -44,42 +44,42 @@ export const api = {
   me: () => request<CurrentUser>("/me"),
   users: () => request<DirectoryUser[]>("/users"),
   projects: () => request<Project[]>("/projects"),
-  resources: (query = "", signal?: AbortSignal) =>
-    request<Resource[]>(`/resources?query=${encodeURIComponent(query)}`, { signal }),
-  resource: (id: string, version?: number) =>
-    request<Resource>(
+  datasets: (query = "", signal?: AbortSignal) =>
+    request<Dataset[]>(`/datasets?query=${encodeURIComponent(query)}`, { signal }),
+  dataset: (id: string, version?: number) =>
+    request<Dataset>(
       version === undefined
-        ? `/resources/${id}`
-        : `/resources/${id}/versions/${version}`,
+        ? `/datasets/${id}`
+        : `/datasets/${id}/versions/${version}`,
     ),
-  resourceVersions: (id: string) =>
-    request<Resource[]>(`/resources/${id}/versions`),
+  datasetVersions: (id: string) =>
+    request<Dataset[]>(`/datasets/${id}/versions`),
   notifications: () => request<Notification[]>("/notifications"),
-  approvals: () => request<Resource[]>("/approvals"),
-  createResource: (form: FormData) =>
-    request<Resource>("/resources", { method: "POST", body: form }),
+  approvals: () => request<Dataset[]>("/approvals"),
+  createDataset: (form: FormData) =>
+    request<Dataset>("/datasets", { method: "POST", body: form }),
   createVersion: (id: string, form: FormData) =>
-    request<Resource>(`/resources/${id}/versions`, {
+    request<Dataset>(`/datasets/${id}/versions`, {
       method: "POST",
       body: form,
     }),
   submit: (id: string, version: number) =>
-    request<Resource>(`/resources/${id}/versions/${version}/submit`, {
+    request<Dataset>(`/datasets/${id}/versions/${version}/submit`, {
       method: "POST",
     }),
   publish: (id: string, version: number) =>
-    request<Resource>(`/resources/${id}/versions/${version}/publish`, {
+    request<Dataset>(`/datasets/${id}/versions/${version}/publish`, {
       method: "POST",
     }),
   approve: (id: string, version: number, comment = "") =>
-    jsonRequest<Resource>(
-      `/resources/${id}/versions/${version}/approve`,
+    jsonRequest<Dataset>(
+      `/datasets/${id}/versions/${version}/approve`,
       "POST",
       { comment },
     ),
   reject: (id: string, version: number, comment: string) =>
-    jsonRequest<Resource>(
-      `/resources/${id}/versions/${version}/reject`,
+    jsonRequest<Dataset>(
+      `/datasets/${id}/versions/${version}/reject`,
       "POST",
       { comment },
     ),
@@ -109,9 +109,9 @@ export const api = {
       method: "POST",
     }),
   audit: () => request<AuditEvent[]>("/audit-events"),
-  async content(id: string, version: number) {
+  async content(id: string, version: number, distributionId: string) {
     const response = await fetch(
-      `${config.apiUrl}/resources/${id}/versions/${version}/content?inline=true`,
+      `${config.apiUrl}/datasets/${id}/versions/${version}/distributions/${distributionId}/content?inline=true`,
       { headers: { Authorization: `Bearer ${await token()}` } },
     );
     if (!response.ok) {

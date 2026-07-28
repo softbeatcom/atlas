@@ -44,9 +44,7 @@ def migrate() -> None:
             command.upgrade(config, "head")
         finally:
             if is_postgres:
-                connection.execute(
-                    text("SELECT pg_advisory_unlock(hashtext('atlas_migrations'))")
-                )
+                connection.execute(text("SELECT pg_advisory_unlock(hashtext('atlas_migrations'))"))
 
 
 if __name__ == "__main__":

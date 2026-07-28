@@ -1,13 +1,13 @@
 import { useEffect, useState } from "react";
 import { api } from "../api";
-import type { AuditEvent, Notification, Resource } from "../types";
+import type { AuditEvent, Dataset, Notification } from "../types";
 import { formatDate, StatusBadge } from "../ui";
 
 export function Approvals({
   items,
   onOpen,
 }: {
-  items: Resource[];
+  items: Dataset[];
   onOpen: (id: string, version: number) => void;
 }) {
   return (
@@ -18,15 +18,15 @@ export function Approvals({
       <section className="card list">
         {items.map((item) => (
           <button
-            className="resource approval-row"
+            className="dataset-row approval-row"
             key={`${item.id}-${item.version.number}`}
             type="button"
             onClick={() => onOpen(item.id, item.version.number)}
           >
             <span className="file" aria-hidden="true">
-              {item.version.filename.split(".").pop()?.toUpperCase()}
+              {item.version.distributions[0]?.filename.split(".").pop()?.toUpperCase() ?? "—"}
             </span>
-            <span className="resource-title">
+            <span className="dataset-title">
               <b>{item.version.title}</b>
               <small>
                 {item.project?.name} · eingereicht von {item.version.creator}
@@ -60,7 +60,7 @@ export function Notifications({
         await api.markNotificationRead(notification.id);
         await onChanged();
       }
-      onOpen(notification.resource_id, notification.version_number);
+      onOpen(notification.dataset_id, notification.version_number);
     } catch (error) {
       onError(error instanceof Error ? error.message : "Benachrichtigung fehlgeschlagen");
     }
@@ -70,7 +70,7 @@ export function Notifications({
     <>
       <div className="eyebrow">Benachrichtigungen</div>
       <h1>Aktuelles</h1>
-      <p>Freigaben und Entscheidungen zu deinen Ressourcen.</p>
+      <p>Freigaben und Entscheidungen zu deinen Datensätzen.</p>
       <section className="card list">
         {items.map((notification) => (
           <button
@@ -124,7 +124,7 @@ export function AuditLog({
             <b>{event.action}</b>
             <span>
               {event.actor_subject} · {formatDate(event.created_at)} ·{" "}
-              {event.resource_id ?? "System"}
+              {event.dataset_id ?? "System"}
             </span>
           </div>
         ))}

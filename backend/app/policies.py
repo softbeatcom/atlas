@@ -3,11 +3,11 @@ from sqlalchemy.orm import Session
 
 from .auth import CurrentUser
 from .models import (
+    Dataset,
+    DatasetVersion,
     MembershipRole,
     Project,
     ProjectMembership,
-    Resource,
-    ResourceVersion,
     VersionStatus,
     Visibility,
 )
@@ -50,10 +50,10 @@ def is_project_approver(
 def can_view_metadata(
     session: Session,
     user: CurrentUser,
-    resource: Resource,
+    dataset: Dataset,
     project: Project | None,
 ) -> bool:
-    if user.has("admin") or user.has("auditor") or resource.owner_subject == user.subject:
+    if user.has("admin") or user.has("auditor") or dataset.owner_subject == user.subject:
         return True
     if project is None:
         return False
@@ -65,10 +65,10 @@ def can_view_metadata(
 def can_read_content(
     session: Session,
     user: CurrentUser,
-    resource: Resource,
+    dataset: Dataset,
     project: Project | None,
 ) -> bool:
-    if user.has("admin") or resource.owner_subject == user.subject:
+    if user.has("admin") or dataset.owner_subject == user.subject:
         return True
     if user.has("auditor"):
         return False
@@ -82,36 +82,30 @@ def can_read_content(
 def can_view_version_metadata(
     session: Session,
     user: CurrentUser,
-    resource: Resource,
+    dataset: Dataset,
     project: Project | None,
-    version: ResourceVersion,
+    version: DatasetVersion,
 ) -> bool:
     if version.status == VersionStatus.PUBLISHED:
-        return can_view_metadata(session, user, resource, project)
-    if user.has("admin") or user.has("auditor") or resource.owner_subject == user.subject:
+        return can_view_metadata(session, user, dataset, project)
+    if user.has("admin") or user.has("auditor") or dataset.owner_subject == user.subject:
         return True
-    return (
-        version.status == VersionStatus.PENDING
-        and is_project_approver(session, user, project)
-    )
+    return version.status == VersionStatus.PENDING and is_project_approver(session, user, project)
 
 
-def can_manage_resource(user: CurrentUser, resource: Resource) -> bool:
-    return user.has("admin") or resource.owner_subject == user.subject
+def can_manage_dataset(user: CurrentUser, dataset: Dataset) -> bool:
+    return user.has("admin") or dataset.owner_subject == user.subject
 
 
 def can_read_version_content(
     session: Session,
     user: CurrentUser,
-    resource: Resource,
+    dataset: Dataset,
     project: Project | None,
-    version: ResourceVersion,
+    version: DatasetVersion,
 ) -> bool:
     if version.status == VersionStatus.PUBLISHED:
-        return can_read_content(session, user, resource, project)
-    if user.has("admin") or resource.owner_subject == user.subject:
+        return can_read_content(session, user, dataset, project)
+    if user.has("admin") or dataset.owner_subject == user.subject:
         return True
-    return (
-        version.status == VersionStatus.PENDING
-        and is_project_approver(session, user, project)
-    )
+    return version.status == VersionStatus.PENDING and is_project_approver(session, user, project)

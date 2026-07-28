@@ -5,7 +5,7 @@ from uuid import uuid4
 
 from fastapi import Depends, FastAPI, File, Form, HTTPException, Query, UploadFile, status
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, JSONResponse
 from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
@@ -17,19 +17,20 @@ from .demo import DEMO_SUBJECTS, DEMO_USERS
 from .models import (
     ApprovalRequest,
     AuditEvent,
+    Dataset,
+    DatasetVersion,
+    Distribution,
     MembershipRole,
     Notification,
     Project,
     ProjectMembership,
-    Resource,
-    ResourceVersion,
     VersionStatus,
     Visibility,
     utcnow,
 )
 from .policies import (
     can_contribute_to_project,
-    can_manage_resource,
+    can_manage_dataset,
     can_read_version_content,
     can_view_version_metadata,
     is_project_approver,
@@ -37,6 +38,7 @@ from .policies import (
 )
 from .schemas import (
     AuditOut,
+    DatasetOut,
     DecisionIn,
     DirectoryUserOut,
     MembershipIn,
@@ -46,7 +48,6 @@ from .schemas import (
     OkOut,
     ProjectCreate,
     ProjectOut,
-    ResourceOut,
 )
 from .storage import storage
 
@@ -65,8 +66,11 @@ app = FastAPI(
     lifespan=lifespan,
 )
 app.add_middleware(
-    CORSMiddleware, allow_origins=settings.allowed_origins, allow_credentials=True,
-    allow_methods=["*"], allow_headers=["*"],
+    CORSMiddleware,
+    allow_origins=settings.allowed_origins,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
 
 
@@ -81,19 +85,15 @@ def initialise() -> None:
             session.flush()
         platform = session.scalar(select(Project).where(Project.name == "Platform"))
         if platform is None:
-            platform = Project(name="Platform", visibility=Visibility.ORGANIZATION, approval_required=False)
+            platform = Project(
+                name="Platform", visibility=Visibility.ORGANIZATION, approval_required=False
+            )
             session.add(platform)
             session.flush()
         _repair_demo_memberships(session)
-        _ensure_membership(
-            session, aster.id, DEMO_SUBJECTS["alice"], MembershipRole.MEMBER
-        )
-        _ensure_membership(
-            session, aster.id, DEMO_SUBJECTS["bob"], MembershipRole.APPROVER
-        )
-        _ensure_membership(
-            session, platform.id, DEMO_SUBJECTS["alice"], MembershipRole.MEMBER
-        )
+        _ensure_membership(session, aster.id, DEMO_SUBJECTS["alice"], MembershipRole.MEMBER)
+        _ensure_membership(session, aster.id, DEMO_SUBJECTS["bob"], MembershipRole.APPROVER)
+        _ensure_membership(session, platform.id, DEMO_SUBJECTS["alice"], MembershipRole.MEMBER)
         session.commit()
 
 
@@ -126,12 +126,23 @@ def api_error(code: int, detail: str) -> None:
     raise HTTPException(code, detail)
 
 
-def audit(session: Session, user: CurrentUser, action: str, resource: Resource | None = None,
-          version: ResourceVersion | None = None, details: dict | None = None) -> None:
-    session.add(AuditEvent(actor_subject=user.subject, action=action,
-                           resource_id=resource.id if resource else None,
-                           version_number=version.number if version else None,
-                           details=details or {}))
+def audit(
+    session: Session,
+    user: CurrentUser,
+    action: str,
+    dataset: Dataset | None = None,
+    version: DatasetVersion | None = None,
+    details: dict | None = None,
+) -> None:
+    session.add(
+        AuditEvent(
+            actor_subject=user.subject,
+            action=action,
+            dataset_id=dataset.id if dataset else None,
+            version_number=version.number if version else None,
+            details=details or {},
+        )
+    )
 
 
 def project_for(session: Session, project_id: str | None) -> Project | None:
@@ -143,68 +154,111 @@ def project_for(session: Session, project_id: str | None) -> Project | None:
     return project
 
 
-def get_resource(session: Session, resource_id: str) -> Resource:
-    resource = session.get(Resource, resource_id)
-    if not resource:
-        api_error(status.HTTP_404_NOT_FOUND, "Ressource nicht gefunden")
-    return resource
+def get_dataset(session: Session, dataset_id: str) -> Dataset:
+    dataset = session.get(Dataset, dataset_id)
+    if not dataset:
+        api_error(status.HTTP_404_NOT_FOUND, "Datensatz nicht gefunden")
+    return dataset
 
 
-def get_version(session: Session, resource: Resource, number: int | None = None) -> ResourceVersion:
+def get_version(session: Session, dataset: Dataset, number: int | None = None) -> DatasetVersion:
     if number is not None:
-        version = session.scalar(select(ResourceVersion).where(
-            ResourceVersion.resource_id == resource.id, ResourceVersion.number == number))
-    elif resource.current_published_number:
-        version = session.scalar(select(ResourceVersion).where(
-            ResourceVersion.resource_id == resource.id,
-            ResourceVersion.number == resource.current_published_number))
+        version = session.scalar(
+            select(DatasetVersion).where(
+                DatasetVersion.dataset_id == dataset.id, DatasetVersion.number == number
+            )
+        )
+    elif dataset.current_published_number:
+        version = session.scalar(
+            select(DatasetVersion).where(
+                DatasetVersion.dataset_id == dataset.id,
+                DatasetVersion.number == dataset.current_published_number,
+            )
+        )
     else:
-        version = session.scalar(select(ResourceVersion).where(
-            ResourceVersion.resource_id == resource.id).order_by(ResourceVersion.number.desc()))
+        version = session.scalar(
+            select(DatasetVersion)
+            .where(DatasetVersion.dataset_id == dataset.id)
+            .order_by(DatasetVersion.number.desc())
+        )
     if not version:
         api_error(status.HTTP_404_NOT_FOUND, "Version nicht gefunden")
     return version
 
 
-def latest_version(session: Session, resource: Resource) -> ResourceVersion:
+def latest_version(session: Session, dataset: Dataset) -> DatasetVersion:
     version = session.scalar(
-        select(ResourceVersion)
-        .where(ResourceVersion.resource_id == resource.id)
-        .order_by(ResourceVersion.number.desc())
+        select(DatasetVersion)
+        .where(DatasetVersion.dataset_id == dataset.id)
+        .order_by(DatasetVersion.number.desc())
     )
     if not version:
         api_error(status.HTTP_404_NOT_FOUND, "Version nicht gefunden")
     return version
 
 
-def resource_out(session: Session, resource: Resource, version: ResourceVersion) -> dict:
-    project = project_for(session, resource.project_id)
-    current = resource.current_published_number
+def dataset_out(session: Session, dataset: Dataset, version: DatasetVersion) -> dict:
+    project = project_for(session, dataset.project_id)
+    current = dataset.current_published_number
     latest = session.scalar(
-        select(ResourceVersion.number)
-        .where(ResourceVersion.resource_id == resource.id)
-        .order_by(ResourceVersion.number.desc())
+        select(DatasetVersion.number)
+        .where(DatasetVersion.dataset_id == dataset.id)
+        .order_by(DatasetVersion.number.desc())
     )
+    distributions = session.scalars(
+        select(Distribution)
+        .where(Distribution.version_id == version.id)
+        .order_by(Distribution.position)
+    ).all()
     return {
-        "id": resource.id, "project": {"id": project.id, "name": project.name,
-        "visibility": project.visibility.value, "approval_required": project.approval_required} if project else None,
-        "owner": resource.owner_subject, "current_published_number": current, "latest_number": latest,
-        "is_current": version.number == current, "newer_version": current if current and version.number < current else None,
-        "version": {"number": version.number, "status": version.status.value, "title": version.title,
-                    "description": version.description, "resource_type": version.resource_type,
-                    "keywords": version.keywords, "creator": version.creator,
-                    "version_label": version.version_label, "filename": version.original_filename,
-                    "content_size": version.content_size, "media_type": version.media_type,
-                    "sha256": version.sha256, "created_at": version.created_at,
-                    "modified_at": version.modified_at, "published_at": version.published_at},
+        "id": dataset.id,
+        "project": {
+            "id": project.id,
+            "name": project.name,
+            "visibility": project.visibility.value,
+            "approval_required": project.approval_required,
+        }
+        if project
+        else None,
+        "owner": dataset.owner_subject,
+        "current_published_number": current,
+        "latest_number": latest,
+        "is_current": version.number == current,
+        "newer_version": current if current and version.number < current else None,
+        "version": {
+            "number": version.number,
+            "status": version.status.value,
+            "title": version.title,
+            "description": version.description,
+            "dataset_type": version.dataset_type,
+            "keywords": version.keywords,
+            "creator": version.creator,
+            "version_label": version.version_label,
+            "distributions": [
+                {
+                    "id": item.id,
+                    "position": item.position,
+                    "filename": item.original_filename,
+                    "content_size": item.content_size,
+                    "media_type": item.media_type,
+                    "sha256": item.sha256,
+                }
+                for item in distributions
+            ],
+            "distribution_count": len(distributions),
+            "total_size": sum(item.content_size for item in distributions),
+            "created_at": version.created_at,
+            "modified_at": version.modified_at,
+            "published_at": version.published_at,
+        },
     }
 
 
-def publish(session: Session, user: CurrentUser, resource: Resource, version: ResourceVersion) -> None:
+def publish(session: Session, user: CurrentUser, dataset: Dataset, version: DatasetVersion) -> None:
     version.status = VersionStatus.PUBLISHED
     version.published_at = utcnow()
-    resource.current_published_number = version.number
-    audit(session, user, "resource.published", resource, version)
+    dataset.current_published_number = version.number
+    audit(session, user, "dataset.published", dataset, version)
 
 
 def clean_required(value: str, field: str, maximum: int) -> str:
@@ -272,14 +326,26 @@ def directory_users(user: CurrentUser = Depends(require_admin)):
 
 
 @app.get("/api/v1/projects", response_model=list[ProjectOut], tags=["projects"])
-def list_projects(session: Session = Depends(get_session), user: CurrentUser = Depends(get_current_user)):
+def list_projects(
+    session: Session = Depends(get_session), user: CurrentUser = Depends(get_current_user)
+):
     projects = session.scalars(select(Project).order_by(Project.name)).all()
-    return [project for project in projects if user.has("admin") or user.has("auditor") or
-            project.visibility == Visibility.ORGANIZATION or membership(session, project.id, user.subject)]
+    return [
+        project
+        for project in projects
+        if user.has("admin")
+        or user.has("auditor")
+        or project.visibility == Visibility.ORGANIZATION
+        or membership(session, project.id, user.subject)
+    ]
 
 
 @app.post("/api/v1/projects", response_model=ProjectOut, status_code=201, tags=["projects"])
-def create_project(data: ProjectCreate, session: Session = Depends(get_session), user: CurrentUser = Depends(require_admin)):
+def create_project(
+    data: ProjectCreate,
+    session: Session = Depends(get_session),
+    user: CurrentUser = Depends(require_admin),
+):
     project = Project(**data.model_dump())
     session.add(project)
     audit(session, user, "project.created", details={"project": project.name})
@@ -293,7 +359,12 @@ def create_project(data: ProjectCreate, session: Session = Depends(get_session),
 
 
 @app.put("/api/v1/projects/{project_id}", response_model=ProjectOut, tags=["projects"])
-def update_project(project_id: str, data: ProjectCreate, session: Session = Depends(get_session), user: CurrentUser = Depends(require_admin)):
+def update_project(
+    project_id: str,
+    data: ProjectCreate,
+    session: Session = Depends(get_session),
+    user: CurrentUser = Depends(require_admin),
+):
     project = project_for(session, project_id)
     for field, value in data.model_dump().items():
         setattr(project, field, value)
@@ -306,14 +377,32 @@ def update_project(project_id: str, data: ProjectCreate, session: Session = Depe
     return project
 
 
-@app.get("/api/v1/projects/{project_id}/members", response_model=list[MembershipOut], tags=["projects"])
-def list_members(project_id: str, session: Session = Depends(get_session), user: CurrentUser = Depends(require_admin)):
+@app.get(
+    "/api/v1/projects/{project_id}/members", response_model=list[MembershipOut], tags=["projects"]
+)
+def list_members(
+    project_id: str,
+    session: Session = Depends(get_session),
+    user: CurrentUser = Depends(require_admin),
+):
     project_for(session, project_id)
-    return session.scalars(select(ProjectMembership).where(ProjectMembership.project_id == project_id)).all()
+    return session.scalars(
+        select(ProjectMembership).where(ProjectMembership.project_id == project_id)
+    ).all()
 
 
-@app.put("/api/v1/projects/{project_id}/members/{subject}", response_model=MembershipOut, tags=["projects"])
-def put_member(project_id: str, subject: str, data: MembershipIn, session: Session = Depends(get_session), user: CurrentUser = Depends(require_admin)):
+@app.put(
+    "/api/v1/projects/{project_id}/members/{subject}",
+    response_model=MembershipOut,
+    tags=["projects"],
+)
+def put_member(
+    project_id: str,
+    subject: str,
+    data: MembershipIn,
+    session: Session = Depends(get_session),
+    user: CurrentUser = Depends(require_admin),
+):
     if subject != data.subject:
         api_error(status.HTTP_422_UNPROCESSABLE_CONTENT, "Subject stimmt nicht mit URL überein")
     project_for(session, project_id)
@@ -323,7 +412,12 @@ def put_member(project_id: str, subject: str, data: MembershipIn, session: Sessi
     else:
         item = ProjectMembership(project_id=project_id, **data.model_dump())
         session.add(item)
-    audit(session, user, "project.membership.updated", details={"project_id": project_id, "subject": subject, "role": data.role.value})
+    audit(
+        session,
+        user,
+        "project.membership.updated",
+        details={"project_id": project_id, "subject": subject, "role": data.role.value},
+    )
     session.commit()
     session.refresh(item)
     return item
@@ -355,315 +449,439 @@ def delete_member(
     return {"ok": True}
 
 
-@app.post(
-    "/api/v1/resources",
-    response_model=ResourceOut,
-    status_code=201,
-    tags=["resources"],
-)
-async def create_resource(
-    title: str = Form(...), description: str = Form(...), resource_type: str = Form(...),
-    keywords: str = Form(""), version_label: str = Form("1.0"), project_id: str | None = Form(None),
-    file: UploadFile = File(...), session: Session = Depends(get_session), user: CurrentUser = Depends(get_current_user),
+def validate_files(files: list[UploadFile]) -> None:
+    if not files:
+        api_error(status.HTTP_422_UNPROCESSABLE_CONTENT, "Mindestens eine Datei ist erforderlich")
+    if len(files) > 100:
+        api_error(
+            status.HTTP_422_UNPROCESSABLE_CONTENT,
+            "Ein Datensatz darf höchstens 100 Dateien enthalten",
+        )
+    names = [upload_filename(item) for item in files]
+    if len(set(names)) != len(names):
+        api_error(
+            status.HTTP_422_UNPROCESSABLE_CONTENT,
+            "Dateinamen müssen innerhalb einer Version eindeutig sein",
+        )
+
+
+async def add_distributions(
+    dataset: Dataset, version: DatasetVersion, files: list[UploadFile]
+) -> list[Distribution]:
+    validate_files(files)
+    distributions: list[Distribution] = []
+    total_size = 0
+    try:
+        for position, file in enumerate(files, start=1):
+            distribution = Distribution(
+                id=str(uuid4()),
+                version_id=version.id,
+                position=position,
+                original_filename=upload_filename(file),
+                storage_key="",
+                content_size=0,
+                media_type="",
+                sha256="",
+            )
+            key = f"{dataset.id}/{version.id}/{distribution.id}/content"
+            size, checksum, media_type = await storage.store(key, file)
+            total_size += size
+            if total_size > settings.max_dataset_upload_bytes:
+                storage.remove(key)
+                raise HTTPException(
+                    status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
+                    "Die Dateien einer Version dürfen zusammen höchstens 1 GiB groß sein",
+                )
+            distribution.storage_key = key
+            distribution.content_size = size
+            distribution.media_type = media_type
+            distribution.sha256 = checksum
+            distributions.append(distribution)
+    except Exception:
+        for distribution in distributions:
+            storage.remove(distribution.storage_key)
+        raise
+    return distributions
+
+
+@app.post("/api/v1/datasets", response_model=DatasetOut, status_code=201, tags=["datasets"])
+async def create_dataset(
+    title: str = Form(...),
+    description: str = Form(...),
+    dataset_type: str = Form(...),
+    keywords: str = Form(""),
+    version_label: str = Form("1.0"),
+    project_id: str | None = Form(None),
+    files: list[UploadFile] = File(...),
+    session: Session = Depends(get_session),
+    user: CurrentUser = Depends(get_current_user),
 ):
     project = project_for(session, project_id)
     if project and not can_contribute_to_project(session, user, project.id):
         api_error(status.HTTP_403_FORBIDDEN, "Keine Berechtigung für dieses Projekt")
-    resource = Resource(id=f"res_{uuid4().hex[:20]}", owner_subject=user.subject, project_id=project_id)
-    session.add(resource)
-    session.flush()
-    key = f"{resource.id}/{uuid4().hex}/content"
+    dataset = Dataset(
+        id=f"ds_{uuid4().hex[:20]}", owner_subject=user.subject, project_id=project_id
+    )
+    version = DatasetVersion(
+        id=str(uuid4()),
+        dataset_id=dataset.id,
+        number=1,
+        title=clean_required(title, "Titel", 300),
+        description=clean_required(description, "Beschreibung", 20_000),
+        dataset_type=clean_required(dataset_type, "Datensatztyp", 100),
+        keywords=parse_keywords(keywords),
+        creator=user.username,
+        version_label=clean_required(version_label or "1.0", "Version", 100),
+    )
     try:
-        size, checksum, media_type = await storage.store(key, file)
-        version = ResourceVersion(
-            resource_id=resource.id,
-            number=1,
-            title=clean_required(title, "Titel", 300),
-            description=clean_required(description, "Beschreibung", 20_000),
-            resource_type=clean_required(resource_type, "Ressourcentyp", 100),
-            keywords=parse_keywords(keywords),
-            creator=user.username,
-            version_label=clean_required(version_label or "1.0", "Version", 100),
-            original_filename=upload_filename(file),
-            storage_key=key,
-            content_size=size,
-            media_type=media_type,
-            sha256=checksum,
-        )
-        session.add(version)
-        audit(session, user, "resource.version.created", resource, version)
+        distributions = await add_distributions(dataset, version, files)
+        session.add_all([dataset, version, *distributions])
+        audit(session, user, "dataset.version.created", dataset, version)
         session.commit()
     except Exception:
         session.rollback()
-        storage.remove(key)
+        for distribution in locals().get("distributions", []):
+            storage.remove(distribution.storage_key)
         raise
-    return resource_out(session, resource, version)
+    return dataset_out(session, dataset, version)
 
 
 @app.post(
-    "/api/v1/resources/{resource_id}/versions",
-    response_model=ResourceOut,
+    "/api/v1/datasets/{dataset_id}/versions",
+    response_model=DatasetOut,
     status_code=201,
-    tags=["resources"],
+    tags=["datasets"],
 )
 async def create_next_version(
-    resource_id: str, title: str = Form(...), description: str = Form(...), resource_type: str = Form(...),
-    keywords: str = Form(""), version_label: str = Form(...), file: UploadFile = File(...),
-    session: Session = Depends(get_session), user: CurrentUser = Depends(get_current_user),
+    dataset_id: str,
+    title: str = Form(...),
+    description: str = Form(...),
+    dataset_type: str = Form(...),
+    keywords: str = Form(""),
+    version_label: str = Form(...),
+    files: list[UploadFile] = File(...),
+    session: Session = Depends(get_session),
+    user: CurrentUser = Depends(get_current_user),
 ):
-    resource = get_resource(session, resource_id)
-    if not can_manage_resource(user, resource):
-        api_error(status.HTTP_403_FORBIDDEN, "Nur Ersteller:in oder Admin darf eine neue Version anlegen")
-    previous = latest_version(session, resource)
+    dataset = get_dataset(session, dataset_id)
+    if not can_manage_dataset(user, dataset):
+        api_error(status.HTTP_403_FORBIDDEN, "Keine Berechtigung")
+    previous = latest_version(session, dataset)
     if previous.status not in {VersionStatus.PUBLISHED, VersionStatus.REJECTED}:
         api_error(
             status.HTTP_409_CONFLICT,
             "Vor einer neuen Version muss der aktuelle Entwurf abgeschlossen werden",
         )
-    number = previous.number + 1
-    key = f"{resource.id}/{uuid4().hex}/content"
+    version = DatasetVersion(
+        id=str(uuid4()),
+        dataset_id=dataset.id,
+        number=previous.number + 1,
+        title=clean_required(title, "Titel", 300),
+        description=clean_required(description, "Beschreibung", 20_000),
+        dataset_type=clean_required(dataset_type, "Datensatztyp", 100),
+        keywords=parse_keywords(keywords),
+        creator=user.username,
+        version_label=clean_required(version_label, "Version", 100),
+    )
     try:
-        size, checksum, media_type = await storage.store(key, file)
-        version = ResourceVersion(
-            resource_id=resource.id,
-            number=number,
-            title=clean_required(title, "Titel", 300),
-            description=clean_required(description, "Beschreibung", 20_000),
-            resource_type=clean_required(resource_type, "Ressourcentyp", 100),
-            keywords=parse_keywords(keywords),
-            creator=user.username,
-            version_label=clean_required(version_label, "Version", 100),
-            original_filename=upload_filename(file),
-            storage_key=key,
-            content_size=size,
-            media_type=media_type,
-            sha256=checksum,
-        )
-        session.add(version)
-        audit(session, user, "resource.version.created", resource, version)
+        distributions = await add_distributions(dataset, version, files)
+        session.add_all([version, *distributions])
+        audit(session, user, "dataset.version.created", dataset, version)
         session.commit()
     except IntegrityError as exc:
         session.rollback()
-        storage.remove(key)
+        for distribution in locals().get("distributions", []):
+            storage.remove(distribution.storage_key)
         raise HTTPException(
-            status.HTTP_409_CONFLICT,
-            "Eine neue Version wurde bereits parallel angelegt",
+            status.HTTP_409_CONFLICT, "Eine neue Version wurde bereits parallel angelegt"
         ) from exc
     except Exception:
         session.rollback()
-        storage.remove(key)
+        for distribution in locals().get("distributions", []):
+            storage.remove(distribution.storage_key)
         raise
-    return resource_out(session, resource, version)
+    return dataset_out(session, dataset, version)
 
 
-@app.get("/api/v1/resources", response_model=list[ResourceOut], tags=["resources"])
-def list_resources(query: str = "", project_id: str | None = None, resource_type: str | None = None,
-                   session: Session = Depends(get_session), user: CurrentUser = Depends(get_current_user)):
+@app.get("/api/v1/datasets", response_model=list[DatasetOut], tags=["datasets"])
+def list_datasets(
+    query: str = "",
+    project_id: str | None = None,
+    dataset_type: str | None = None,
+    session: Session = Depends(get_session),
+    user: CurrentUser = Depends(get_current_user),
+):
     rows = []
-    for resource in session.scalars(select(Resource).order_by(Resource.created_at.desc())).all():
-        project = project_for(session, resource.project_id)
-        if project_id and resource.project_id != project_id:
+    for dataset in session.scalars(select(Dataset).order_by(Dataset.created_at.desc())).all():
+        project = project_for(session, dataset.project_id)
+        if project_id and dataset.project_id != project_id:
             continue
         version = (
-            latest_version(session, resource)
-            if user.has("admin") or user.has("auditor") or resource.owner_subject == user.subject
-            else get_version(session, resource)
+            latest_version(session, dataset)
+            if (user.has("admin") or user.has("auditor") or dataset.owner_subject == user.subject)
+            else get_version(session, dataset)
         )
-        if not can_view_version_metadata(session, user, resource, project, version):
+        if not can_view_version_metadata(session, user, dataset, project, version):
             continue
-        haystack = " ".join([version.title, version.description, version.resource_type, *version.keywords]).lower()
-        if query.lower() not in haystack:
+        if (
+            query.lower()
+            not in " ".join(
+                [version.title, version.description, version.dataset_type, *version.keywords]
+            ).lower()
+        ):
             continue
-        if resource_type and version.resource_type != resource_type:
+        if dataset_type and version.dataset_type != dataset_type:
             continue
-        rows.append(resource_out(session, resource, version))
+        rows.append(dataset_out(session, dataset, version))
     return rows
 
 
 @app.get(
-    "/api/v1/resources/{resource_id}/versions",
-    response_model=list[ResourceOut],
-    tags=["resources"],
+    "/api/v1/datasets/{dataset_id}/versions", response_model=list[DatasetOut], tags=["datasets"]
 )
-def list_resource_versions(
-    resource_id: str,
+def list_dataset_versions(
+    dataset_id: str,
     session: Session = Depends(get_session),
     user: CurrentUser = Depends(get_current_user),
 ):
-    resource = get_resource(session, resource_id)
-    project = project_for(session, resource.project_id)
+    dataset = get_dataset(session, dataset_id)
+    project = project_for(session, dataset.project_id)
     versions = session.scalars(
-        select(ResourceVersion)
-        .where(ResourceVersion.resource_id == resource.id)
-        .order_by(ResourceVersion.number.desc())
+        select(DatasetVersion)
+        .where(DatasetVersion.dataset_id == dataset.id)
+        .order_by(DatasetVersion.number.desc())
     ).all()
     return [
-        resource_out(session, resource, version)
+        dataset_out(session, dataset, version)
         for version in versions
-        if can_view_version_metadata(session, user, resource, project, version)
+        if can_view_version_metadata(session, user, dataset, project, version)
     ]
 
 
-@app.get(
-    "/api/v1/resources/{resource_id}",
-    response_model=ResourceOut,
-    tags=["resources"],
-)
-def get_resource_detail(resource_id: str, version: int | None = Query(None), session: Session = Depends(get_session), user: CurrentUser = Depends(get_current_user)):
-    resource = get_resource(session, resource_id)
-    project = project_for(session, resource.project_id)
-    selected = get_version(session, resource, version)
-    if not can_view_version_metadata(session, user, resource, project, selected):
-        api_error(status.HTTP_404_NOT_FOUND, "Ressource nicht gefunden")
-    return resource_out(session, resource, selected)
+def dataset_detail(
+    dataset_id: str, number: int | None, session: Session, user: CurrentUser
+) -> dict:
+    dataset = get_dataset(session, dataset_id)
+    project = project_for(session, dataset.project_id)
+    version = get_version(session, dataset, number)
+    if not can_view_version_metadata(session, user, dataset, project, version):
+        api_error(status.HTTP_404_NOT_FOUND, "Datensatz nicht gefunden")
+    return dataset_out(session, dataset, version)
+
+
+@app.get("/api/v1/datasets/{dataset_id}", response_model=DatasetOut, tags=["datasets"])
+def get_dataset_detail(
+    dataset_id: str,
+    version: int | None = Query(None),
+    session: Session = Depends(get_session),
+    user: CurrentUser = Depends(get_current_user),
+):
+    return dataset_detail(dataset_id, version, session, user)
 
 
 @app.get(
-    "/api/v1/resources/{resource_id}/versions/{number}",
-    response_model=ResourceOut,
-    tags=["resources"],
+    "/api/v1/datasets/{dataset_id}/versions/{number}", response_model=DatasetOut, tags=["datasets"]
 )
-def get_resource_version_detail(
-    resource_id: str,
+def get_dataset_version_detail(
+    dataset_id: str,
     number: int,
     session: Session = Depends(get_session),
     user: CurrentUser = Depends(get_current_user),
 ):
-    return get_resource_detail(resource_id, number, session, user)
+    return dataset_detail(dataset_id, number, session, user)
 
 
 @app.post(
-    "/api/v1/resources/{resource_id}/versions/{number}/submit",
-    response_model=ResourceOut,
+    "/api/v1/datasets/{dataset_id}/versions/{number}/submit",
+    response_model=DatasetOut,
     tags=["approval"],
 )
-def submit(resource_id: str, number: int, session: Session = Depends(get_session), user: CurrentUser = Depends(get_current_user)):
-    resource = get_resource(session, resource_id)
-    version = get_version(session, resource, number)
-    project = project_for(session, resource.project_id)
-    if not can_manage_resource(user, resource):
+def submit(
+    dataset_id: str,
+    number: int,
+    session: Session = Depends(get_session),
+    user: CurrentUser = Depends(get_current_user),
+):
+    dataset = get_dataset(session, dataset_id)
+    version = get_version(session, dataset, number)
+    project = project_for(session, dataset.project_id)
+    if not can_manage_dataset(user, dataset):
         api_error(status.HTTP_403_FORBIDDEN, "Keine Berechtigung")
     if not project or not project.approval_required:
-        api_error(status.HTTP_409_CONFLICT, "Für diese Ressource ist keine Freigabe erforderlich")
+        api_error(status.HTTP_409_CONFLICT, "Für diesen Datensatz ist keine Freigabe erforderlich")
     if version.status != VersionStatus.DRAFT:
         api_error(status.HTTP_409_CONFLICT, "Nur Entwürfe können eingereicht werden")
     version.status = VersionStatus.PENDING
-    request = ApprovalRequest(version_id=version.id, submitter_subject=user.subject)
-    session.add(request)
-    for item in session.scalars(select(ProjectMembership).where(
-        ProjectMembership.project_id == project.id, ProjectMembership.role == MembershipRole.APPROVER)).all():
+    session.add(ApprovalRequest(version_id=version.id, submitter_subject=user.subject))
+    for item in session.scalars(
+        select(ProjectMembership).where(
+            ProjectMembership.project_id == project.id,
+            ProjectMembership.role == MembershipRole.APPROVER,
+        )
+    ).all():
         if item.subject != user.subject:
-            session.add(Notification(recipient_subject=item.subject, kind="approval_requested",
-                                     message=f"Freigabe angefordert: {version.title}", resource_id=resource.id,
-                                     version_number=number))
-    audit(session, user, "resource.submitted_for_approval", resource, version)
+            session.add(
+                Notification(
+                    recipient_subject=item.subject,
+                    kind="approval_requested",
+                    message=f"Freigabe angefordert: {version.title}",
+                    dataset_id=dataset.id,
+                    version_number=number,
+                )
+            )
+    audit(session, user, "dataset.submitted_for_approval", dataset, version)
     session.commit()
-    return resource_out(session, resource, version)
+    return dataset_out(session, dataset, version)
 
 
 @app.post(
-    "/api/v1/resources/{resource_id}/versions/{number}/publish",
-    response_model=ResourceOut,
+    "/api/v1/datasets/{dataset_id}/versions/{number}/publish",
+    response_model=DatasetOut,
     tags=["approval"],
 )
-def direct_publish(resource_id: str, number: int, session: Session = Depends(get_session), user: CurrentUser = Depends(get_current_user)):
-    resource = get_resource(session, resource_id)
-    version = get_version(session, resource, number)
-    project = project_for(session, resource.project_id)
-    if not can_manage_resource(user, resource):
+def direct_publish(
+    dataset_id: str,
+    number: int,
+    session: Session = Depends(get_session),
+    user: CurrentUser = Depends(get_current_user),
+):
+    dataset = get_dataset(session, dataset_id)
+    version = get_version(session, dataset, number)
+    project = project_for(session, dataset.project_id)
+    if not can_manage_dataset(user, dataset):
         api_error(status.HTTP_403_FORBIDDEN, "Keine Berechtigung")
     if project and project.approval_required:
         api_error(status.HTTP_409_CONFLICT, "Das Projekt erfordert eine Freigabe")
     if version.status != VersionStatus.DRAFT:
         api_error(status.HTTP_409_CONFLICT, "Diese Version kann nicht veröffentlicht werden")
-    publish(session, user, resource, version)
+    publish(session, user, dataset, version)
     session.commit()
-    return resource_out(session, resource, version)
+    return dataset_out(session, dataset, version)
 
 
-@app.get("/api/v1/approvals", response_model=list[ResourceOut], tags=["approval"])
-def approvals(session: Session = Depends(get_session), user: CurrentUser = Depends(get_current_user)):
+@app.get("/api/v1/approvals", response_model=list[DatasetOut], tags=["approval"])
+def approvals(
+    session: Session = Depends(get_session), user: CurrentUser = Depends(get_current_user)
+):
     if not user.has("approver") and not user.has("admin"):
         api_error(status.HTTP_403_FORBIDDEN, "Approverrechte erforderlich")
     result = []
-    for request in session.scalars(select(ApprovalRequest).where(ApprovalRequest.decided_at.is_(None))).all():
-        version = session.get(ResourceVersion, request.version_id)
-        resource = session.get(Resource, version.resource_id)
-        project = project_for(session, resource.project_id)
-        allowed = is_project_approver(session, user, project)
-        if allowed:
-            result.append(resource_out(session, resource, version))
+    for request in session.scalars(
+        select(ApprovalRequest).where(ApprovalRequest.decided_at.is_(None))
+    ).all():
+        version = session.get(DatasetVersion, request.version_id)
+        if version is None:
+            continue
+        dataset = session.get(Dataset, version.dataset_id)
+        project = project_for(session, dataset.project_id)
+        if is_project_approver(session, user, project):
+            result.append(dataset_out(session, dataset, version))
     return result
 
 
-def decide(resource_id: str, number: int, data: DecisionIn, approved: bool, session: Session, user: CurrentUser):
-    resource = get_resource(session, resource_id)
-    version = get_version(session, resource, number)
-    project = project_for(session, resource.project_id)
-    request = session.scalar(select(ApprovalRequest).where(ApprovalRequest.version_id == version.id))
+def decide(
+    dataset_id: str,
+    number: int,
+    data: DecisionIn,
+    approved: bool,
+    session: Session,
+    user: CurrentUser,
+):
+    dataset = get_dataset(session, dataset_id)
+    version = get_version(session, dataset, number)
+    project = project_for(session, dataset.project_id)
+    request = session.scalar(
+        select(ApprovalRequest).where(ApprovalRequest.version_id == version.id)
+    )
     item = membership(session, project.id, user.subject) if project else None
     if not request or version.status != VersionStatus.PENDING:
         api_error(status.HTTP_409_CONFLICT, "Keine offene Freigabe vorhanden")
     if request.submitter_subject == user.subject:
         api_error(status.HTTP_403_FORBIDDEN, "Eigene Einreichungen dürfen nicht freigegeben werden")
-    if not user.has("admin") and not (user.has("approver") and item and item.role == MembershipRole.APPROVER):
+    if not user.has("admin") and not (
+        user.has("approver") and item and item.role == MembershipRole.APPROVER
+    ):
         api_error(status.HTTP_403_FORBIDDEN, "Keine Freigabeberechtigung")
     if not approved and not (data.comment or "").strip():
-        api_error(status.HTTP_422_UNPROCESSABLE_CONTENT, "Eine Ablehnungsbegründung ist erforderlich")
+        api_error(
+            status.HTTP_422_UNPROCESSABLE_CONTENT, "Eine Ablehnungsbegründung ist erforderlich"
+        )
     request.decision_subject = user.subject
     request.decision_comment = data.comment
     request.decided_at = utcnow()
     if approved:
-        publish(session, user, resource, version)
-        action, message = "resource.approved", f"Freigegeben und veröffentlicht: {version.title}"
-        audit(session, user, action, resource, version, {"comment": data.comment})
+        publish(session, user, dataset, version)
+        action, message = "dataset.approved", f"Freigegeben und veröffentlicht: {version.title}"
     else:
         version.status = VersionStatus.REJECTED
-        reason = (data.comment or "").strip()
-        action = "resource.rejected"
-        message = f"Abgelehnt: {version.title} — {reason}"[:500]
-        audit(session, user, action, resource, version, {"comment": data.comment})
-    session.add(Notification(recipient_subject=request.submitter_subject, kind=action, message=message,
-                             resource_id=resource.id, version_number=version.number))
+        action = "dataset.rejected"
+        message = f"Abgelehnt: {version.title} — {(data.comment or '').strip()}"[:500]
+    audit(session, user, action, dataset, version, {"comment": data.comment})
+    session.add(
+        Notification(
+            recipient_subject=request.submitter_subject,
+            kind=action,
+            message=message,
+            dataset_id=dataset.id,
+            version_number=version.number,
+        )
+    )
     session.commit()
-    return resource_out(session, resource, version)
+    return dataset_out(session, dataset, version)
 
 
 @app.post(
-    "/api/v1/resources/{resource_id}/versions/{number}/approve",
-    response_model=ResourceOut,
+    "/api/v1/datasets/{dataset_id}/versions/{number}/approve",
+    response_model=DatasetOut,
     tags=["approval"],
 )
-def approve(resource_id: str, number: int, data: DecisionIn, session: Session = Depends(get_session), user: CurrentUser = Depends(get_current_user)):
-    return decide(resource_id, number, data, True, session, user)
+def approve(
+    dataset_id: str,
+    number: int,
+    data: DecisionIn,
+    session: Session = Depends(get_session),
+    user: CurrentUser = Depends(get_current_user),
+):
+    return decide(dataset_id, number, data, True, session, user)
 
 
 @app.post(
-    "/api/v1/resources/{resource_id}/versions/{number}/reject",
-    response_model=ResourceOut,
+    "/api/v1/datasets/{dataset_id}/versions/{number}/reject",
+    response_model=DatasetOut,
     tags=["approval"],
 )
-def reject(resource_id: str, number: int, data: DecisionIn, session: Session = Depends(get_session), user: CurrentUser = Depends(get_current_user)):
-    return decide(resource_id, number, data, False, session, user)
+def reject(
+    dataset_id: str,
+    number: int,
+    data: DecisionIn,
+    session: Session = Depends(get_session),
+    user: CurrentUser = Depends(get_current_user),
+):
+    return decide(dataset_id, number, data, False, session, user)
 
 
-@app.get("/api/v1/resources/{resource_id}/versions/{number}/content", tags=["content"])
-def content(resource_id: str, number: int, inline: bool = False, session: Session = Depends(get_session), user: CurrentUser = Depends(get_current_user)):
-    resource = get_resource(session, resource_id)
-    project = project_for(session, resource.project_id)
-    version = get_version(session, resource, number)
-    if not can_read_version_content(session, user, resource, project, version):
-        api_error(status.HTTP_404_NOT_FOUND, "Ressource nicht gefunden")
-    path = storage.path(version.storage_key)
+def content_response(
+    dataset: Dataset,
+    version: DatasetVersion,
+    distribution: Distribution,
+    inline: bool,
+    session: Session,
+    user: CurrentUser,
+):
+    if not can_read_version_content(
+        session, user, dataset, project_for(session, dataset.project_id), version
+    ):
+        api_error(status.HTTP_404_NOT_FOUND, "Datensatz nicht gefunden")
+    path = storage.path(distribution.storage_key)
     if not path.exists():
         api_error(status.HTTP_404_NOT_FOUND, "Datei nicht gefunden")
-    previewable = version.media_type in {"application/pdf", "text/plain"}
-    disposition = "inline" if inline and previewable else "attachment"
     return FileResponse(
         path,
-        media_type=version.media_type,
-        filename=version.original_filename,
-        content_disposition_type=disposition,
+        media_type=distribution.media_type,
+        filename=distribution.original_filename,
+        content_disposition_type="inline"
+        if inline and distribution.media_type in {"application/pdf", "text/plain"}
+        else "attachment",
         headers={
             "X-Content-Type-Options": "nosniff",
             "Content-Security-Policy": "sandbox; default-src 'none'",
@@ -672,10 +890,85 @@ def content(resource_id: str, number: int, inline: bool = False, session: Sessio
     )
 
 
+@app.get(
+    "/api/v1/datasets/{dataset_id}/versions/{number}/distributions/{distribution_id}/content",
+    tags=["content"],
+)
+def distribution_content(
+    dataset_id: str,
+    number: int,
+    distribution_id: str,
+    inline: bool = False,
+    session: Session = Depends(get_session),
+    user: CurrentUser = Depends(get_current_user),
+):
+    dataset = get_dataset(session, dataset_id)
+    version = get_version(session, dataset, number)
+    distribution = session.get(Distribution, distribution_id)
+    if not distribution or distribution.version_id != version.id:
+        api_error(status.HTTP_404_NOT_FOUND, "Datei nicht gefunden")
+    return content_response(dataset, version, distribution, inline, session, user)
+
+
+@app.get("/api/v1/datasets/{dataset_id}/versions/{number}/dcat.jsonld", tags=["dcat"])
+def dcat_jsonld(
+    dataset_id: str,
+    number: int,
+    session: Session = Depends(get_session),
+    user: CurrentUser = Depends(get_current_user),
+):
+    dataset = get_dataset(session, dataset_id)
+    version = get_version(session, dataset, number)
+    project = project_for(session, dataset.project_id)
+    if not can_view_version_metadata(session, user, dataset, project, version):
+        api_error(status.HTTP_404_NOT_FOUND, "Datensatz nicht gefunden")
+    base = settings.public_api_url.rstrip("/")
+    version_url = f"{base}/datasets/{dataset.id}/versions/{version.number}"
+    distributions = session.scalars(
+        select(Distribution)
+        .where(Distribution.version_id == version.id)
+        .order_by(Distribution.position)
+    ).all()
+    return JSONResponse(
+        {
+            "@context": {
+                "dcat": "http://www.w3.org/ns/dcat#",
+                "dct": "http://purl.org/dc/terms/",
+                "spdx": "http://spdx.org/rdf/terms#",
+            },
+            "@id": version_url,
+            "@type": "dcat:Dataset",
+            "dct:identifier": dataset.id,
+            "dct:title": version.title,
+            "dct:description": version.description,
+            "dcat:keyword": version.keywords,
+            "dcat:version": version.version_label,
+            "dcat:distribution": [
+                {
+                    "@id": f"{version_url}/distributions/{item.id}",
+                    "@type": "dcat:Distribution",
+                    "dct:title": item.original_filename,
+                    "dcat:byteSize": item.content_size,
+                    "dcat:mediaType": item.media_type,
+                    "spdx:checksum": {"@type": "spdx:Checksum", "spdx:checksumValue": item.sha256},
+                    "dcat:downloadURL": f"{version_url}/distributions/{item.id}/content",
+                }
+                for item in distributions
+            ],
+        },
+        media_type="application/ld+json",
+    )
+
+
 @app.get("/api/v1/notifications", response_model=list[NotificationOut], tags=["notifications"])
-def notifications(session: Session = Depends(get_session), user: CurrentUser = Depends(get_current_user)):
-    return session.scalars(select(Notification).where(Notification.recipient_subject == user.subject)
-                           .order_by(Notification.created_at.desc())).all()
+def notifications(
+    session: Session = Depends(get_session), user: CurrentUser = Depends(get_current_user)
+):
+    return session.scalars(
+        select(Notification)
+        .where(Notification.recipient_subject == user.subject)
+        .order_by(Notification.created_at.desc())
+    ).all()
 
 
 @app.post(
@@ -683,7 +976,11 @@ def notifications(session: Session = Depends(get_session), user: CurrentUser = D
     response_model=OkOut,
     tags=["notifications"],
 )
-def read_notification(notification_id: str, session: Session = Depends(get_session), user: CurrentUser = Depends(get_current_user)):
+def read_notification(
+    notification_id: str,
+    session: Session = Depends(get_session),
+    user: CurrentUser = Depends(get_current_user),
+):
     notification = session.get(Notification, notification_id)
     if not notification or notification.recipient_subject != user.subject:
         api_error(status.HTTP_404_NOT_FOUND, "Benachrichtigung nicht gefunden")
@@ -693,7 +990,11 @@ def read_notification(notification_id: str, session: Session = Depends(get_sessi
 
 
 @app.get("/api/v1/audit-events", response_model=list[AuditOut], tags=["audit"])
-def audit_events(session: Session = Depends(get_session), user: CurrentUser = Depends(get_current_user)):
+def audit_events(
+    session: Session = Depends(get_session), user: CurrentUser = Depends(get_current_user)
+):
     if not user.has("admin") and not user.has("auditor"):
         api_error(status.HTTP_403_FORBIDDEN, "Auditorrechte erforderlich")
-    return session.scalars(select(AuditEvent).order_by(AuditEvent.created_at.desc()).limit(500)).all()
+    return session.scalars(
+        select(AuditEvent).order_by(AuditEvent.created_at.desc()).limit(500)
+    ).all()

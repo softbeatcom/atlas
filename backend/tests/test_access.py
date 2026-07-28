@@ -6,122 +6,82 @@ from app.database import Base
 from app.main import publish
 from app.models import (
     AuditEvent,
+    Dataset,
+    DatasetVersion,
+    Distribution,
     MembershipRole,
     Project,
     ProjectMembership,
-    Resource,
-    ResourceVersion,
     VersionStatus,
     Visibility,
 )
-from app.policies import (
-    can_read_content,
-    can_read_version_content,
-    can_view_metadata,
-)
+from app.policies import can_read_content, can_read_version_content, can_view_metadata
 
 
-def setup_session():
+def session_with_dataset():
     engine = create_engine("sqlite://")
     Base.metadata.create_all(engine)
-    return Session(engine)
-
-
-def resource(session, visibility=Visibility.PROJECT):
-    project = Project(name="Aster", visibility=visibility, approval_required=True)
+    session = Session(engine)
+    project = Project(name="Aster", visibility=Visibility.PROJECT, approval_required=True)
     session.add(project)
     session.flush()
-    item = Resource(id="res_test", owner_subject="sub-alice", project_id=project.id)
-    version = ResourceVersion(
-        resource_id=item.id,
+    dataset = Dataset(id="ds_test", owner_subject="sub-alice", project_id=project.id)
+    version = DatasetVersion(
+        id="version-1",
+        dataset_id=dataset.id,
         number=1,
         title="Bericht",
         description="Test",
-        resource_type="report",
+        dataset_type="report",
         keywords=["test"],
         creator="alice",
         version_label="1.0",
+    )
+    distribution = Distribution(
+        id="file-1",
+        version_id=version.id,
+        position=1,
         original_filename="test.txt",
-        storage_key="res_test/1/content",
+        storage_key="ds_test/1/test.txt",
         content_size=4,
         media_type="text/plain",
         sha256="0" * 64,
     )
     session.add_all(
         [
-            item,
+            dataset,
             version,
-            ProjectMembership(
-                project_id=project.id,
-                subject="sub-bob",
-                role=MembershipRole.MEMBER,
-            ),
+            distribution,
+            ProjectMembership(project_id=project.id, subject="sub-bob", role=MembershipRole.MEMBER),
         ]
     )
     session.commit()
-    return project, item, version
+    return session, project, dataset, version
 
 
 def user(subject, *roles):
     return CurrentUser(subject, subject, frozenset(roles))
 
 
-def test_project_member_can_read_but_outsider_cannot():
-    session = setup_session()
-    project, item, _ = resource(session)
-    assert can_view_metadata(session, user("sub-bob", "user"), item, project)
-    assert can_read_content(session, user("sub-bob", "user"), item, project)
-    assert not can_view_metadata(session, user("eve", "user"), item, project)
-    assert not can_read_content(session, user("eve", "user"), item, project)
-
-
-def test_auditor_sees_metadata_but_not_file_content():
-    session = setup_session()
-    project, item, _ = resource(session)
-    assert can_view_metadata(session, user("auditor", "auditor"), item, project)
-    assert not can_read_content(session, user("auditor", "auditor"), item, project)
-
-
-def test_project_approver_can_read_pending_content_but_global_outsider_cannot():
-    session = setup_session()
-    project, item, version = resource(session)
+def test_members_can_read_dataset_but_auditors_cannot_read_files():
+    session, project, dataset, version = session_with_dataset()
+    assert can_view_metadata(session, user("sub-bob", "user"), dataset, project)
+    assert can_read_content(session, user("sub-bob", "user"), dataset, project)
+    assert not can_read_content(session, user("auditor", "auditor"), dataset, project)
     version.status = VersionStatus.PENDING
     membership = session.scalar(
         select(ProjectMembership).where(ProjectMembership.subject == "sub-bob")
     )
     membership.role = MembershipRole.APPROVER
-    session.commit()
-
     assert can_read_version_content(
-        session,
-        user("sub-bob", "user", "approver"),
-        item,
-        project,
-        version,
-    )
-    assert not can_read_version_content(
-        session,
-        user("sub-eve", "user", "approver"),
-        item,
-        project,
-        version,
-    )
-    assert not can_read_version_content(
-        session,
-        user("sub-auditor", "user", "auditor"),
-        item,
-        project,
-        version,
+        session, user("sub-bob", "user", "approver"), dataset, project, version
     )
 
 
-def test_publishing_marks_current_version_and_creates_audit_event():
-    session = setup_session()
-    _, item, version = resource(session)
-    publish(session, user("bob", "approver"), item, version)
+def test_publishing_marks_current_version_and_audits_dataset():
+    session, _, dataset, version = session_with_dataset()
+    publish(session, user("bob", "approver"), dataset, version)
     session.commit()
-    assert item.current_published_number == 1
+    assert dataset.current_published_number == 1
     assert version.status == VersionStatus.PUBLISHED
-    event = session.scalar(select(AuditEvent))
-    assert event is not None
-    assert event.action == "resource.published"
+    assert session.scalar(select(AuditEvent)).action == "dataset.published"

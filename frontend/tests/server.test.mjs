@@ -49,7 +49,7 @@ test("production server exposes health, runtime config, security headers, and SP
   assert.equal(runtime.headers.get("cache-control"), "no-store");
 
   const deepLink = await fetch(
-    `http://127.0.0.1:${port}/resources/res_demo/versions/3`,
+    `http://127.0.0.1:${port}/datasets/ds_demo/versions/3`,
   );
   assert.equal(deepLink.status, 200);
   assert.match(await deepLink.text(), /<title>SoftBeat Atlas<\/title>/);

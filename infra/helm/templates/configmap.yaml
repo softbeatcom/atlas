@@ -8,6 +8,7 @@ data:
   KEYCLOAK_JWKS_URL: {{ .Values.config.keycloakJwksUrl | quote }}
   KEYCLOAK_AUDIENCE: {{ .Values.config.keycloakAudience | quote }}
   KEYCLOAK_ALGORITHM: "RS256"
+  PUBLIC_API_URL: {{ .Values.config.apiUrl | quote }}
   SEED_DEMO_DATA: "false"
   VITE_API_URL: {{ .Values.config.apiUrl | quote }}
   VITE_KEYCLOAK_URL: {{ .Values.config.keycloakUrl | quote }}

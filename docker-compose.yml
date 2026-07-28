@@ -44,6 +44,7 @@ services:
     environment:
       DATABASE_URL: postgresql+psycopg://${POSTGRES_USER:-atlas}:${POSTGRES_PASSWORD:-atlas}@postgres:5432/${POSTGRES_DB:-atlas}
       STORAGE_ROOT: /data/storage
+      PUBLIC_API_URL: http://localhost:8000/api/v1
       CORS_ORIGINS: http://localhost:5173
       KEYCLOAK_ISSUER: http://localhost:8080/realms/atlas
       KEYCLOAK_JWKS_URL: http://keycloak:8080/realms/atlas/protocol/openid-connect/certs

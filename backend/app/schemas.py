@@ -44,25 +44,33 @@ class MeOut(BaseModel):
     roles: list[str]
 
 
-class ResourceVersionOut(BaseModel):
-    number: int
-    status: VersionStatus
-    title: str
-    description: str
-    resource_type: str
-    keywords: list[str]
-    creator: str
-    version_label: str
+class DistributionOut(BaseModel):
+    id: str
+    position: int
     filename: str
     content_size: int
     media_type: str
     sha256: str
+
+
+class DatasetVersionOut(BaseModel):
+    number: int
+    status: VersionStatus
+    title: str
+    description: str
+    dataset_type: str
+    keywords: list[str]
+    creator: str
+    version_label: str
+    distributions: list[DistributionOut]
+    distribution_count: int
+    total_size: int
     created_at: datetime
     modified_at: datetime
     published_at: datetime | None
 
 
-class ResourceOut(BaseModel):
+class DatasetOut(BaseModel):
     id: str
     project: ProjectOut | None
     owner: str
@@ -70,14 +78,14 @@ class ResourceOut(BaseModel):
     latest_number: int
     is_current: bool
     newer_version: int | None
-    version: ResourceVersionOut
+    version: DatasetVersionOut
 
 
 class NotificationOut(BaseModel):
     id: str
     kind: str
     message: str
-    resource_id: str
+    dataset_id: str
     version_number: int
     read: bool
     created_at: datetime
@@ -89,7 +97,7 @@ class AuditOut(BaseModel):
     id: str
     actor_subject: str
     action: str
-    resource_id: str | None
+    dataset_id: str | None
     version_number: int | None
     details: dict
     created_at: datetime

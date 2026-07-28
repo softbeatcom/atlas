@@ -15,6 +15,8 @@ class Settings(BaseSettings):
     keycloak_algorithm: str = "RS256"
     jwks_cache_seconds: int = 300
     max_upload_bytes: int = 100 * 1024 * 1024
+    max_dataset_upload_bytes: int = 1024 * 1024 * 1024
+    public_api_url: str = "http://localhost:8000/api/v1"
     seed_demo_data: bool = False
 
     @property

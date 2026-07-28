@@ -3,10 +3,10 @@ import { api } from "./api";
 import { keycloak } from "./auth";
 import { AdminProjects } from "./features/admin";
 import {
-  ResourceDetail,
-  ResourceForm,
-  ResourceList,
-} from "./features/resources";
+  DatasetDetail,
+  DatasetForm,
+  DatasetList,
+} from "./features/datasets";
 import {
   Approvals,
   AuditLog,
@@ -17,11 +17,11 @@ import type {
   DirectoryUser,
   Notification,
   Project,
-  Resource,
+  Dataset,
 } from "./types";
 
 type Page =
-  | "resources"
+  | "datasets"
   | "upload"
   | "detail"
   | "new-version"
@@ -34,13 +34,13 @@ type NavigationPage = Exclude<Page, "detail" | "new-version">;
 
 type Route = {
   page: Page;
-  resourceId?: string;
+  datasetId?: string;
   version?: number;
 };
 
 const pagePaths: Record<NavigationPage, string> = {
-  resources: "/resources",
-  upload: "/resources/new",
+  datasets: "/datasets",
+  upload: "/datasets/new",
   approvals: "/approvals",
   notifications: "/notifications",
   admin: "/admin/projects",
@@ -48,38 +48,38 @@ const pagePaths: Record<NavigationPage, string> = {
 };
 
 function activeNavigationPage(page: Page): NavigationPage {
-  if (page === "detail" || page === "new-version") return "resources";
+  if (page === "detail" || page === "new-version") return "datasets";
   return page;
 }
 
 function routeFromLocation(): Route {
   const path = window.location.pathname.replace(/\/+$/, "") || "/";
-  const newVersion = path.match(/^\/resources\/([^/]+)\/versions\/new$/);
+  const newVersion = path.match(/^\/datasets\/([^/]+)\/versions\/new$/);
   if (newVersion) {
-    return { page: "new-version", resourceId: decodeURIComponent(newVersion[1]) };
+    return { page: "new-version", datasetId: decodeURIComponent(newVersion[1]) };
   }
-  const detail = path.match(/^\/resources\/([^/]+)\/versions\/(\d+)$/);
+  const detail = path.match(/^\/datasets\/([^/]+)\/versions\/(\d+)$/);
   if (detail) {
     return {
       page: "detail",
-      resourceId: decodeURIComponent(detail[1]),
+      datasetId: decodeURIComponent(detail[1]),
       version: Number(detail[2]),
     };
   }
   const entry = Object.entries(pagePaths).find(([, candidate]) => candidate === path);
   if (entry) return { page: entry[0] as Route["page"] };
-  return { page: "resources" };
+  return { page: "datasets" };
 }
 
 export function App() {
   const [user, setUser] = useState<CurrentUser | null>(null);
   const [page, setPage] = useState<Page>(routeFromLocation().page);
-  const [resources, setResources] = useState<Resource[]>([]);
+  const [datasets, setDatasets] = useState<Dataset[]>([]);
   const [projects, setProjects] = useState<Project[]>([]);
-  const [approvals, setApprovals] = useState<Resource[]>([]);
+  const [approvals, setApprovals] = useState<Dataset[]>([]);
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [directoryUsers, setDirectoryUsers] = useState<DirectoryUser[]>([]);
-  const [selected, setSelected] = useState<Resource | null>(null);
+  const [selected, setSelected] = useState<Dataset | null>(null);
   const [message, setMessage] = useState("");
   const [initialLoading, setInitialLoading] = useState(true);
   const [searchLoading, setSearchLoading] = useState(false);
@@ -90,17 +90,17 @@ export function App() {
     const me = await api.me();
     const canApprove = me.roles.includes("approver") || me.roles.includes("admin");
     const isAdmin = me.roles.includes("admin");
-    const [projectItems, resourceItems, notificationItems, approvalItems, users] =
+    const [projectItems, datasetItems, notificationItems, approvalItems, users] =
       await Promise.all([
         api.projects(),
-        api.resources(),
+        api.datasets(),
         api.notifications(),
         canApprove ? api.approvals() : Promise.resolve([]),
         isAdmin ? api.users() : Promise.resolve([]),
       ]);
     setUser(me);
     setProjects(projectItems);
-    setResources(resourceItems);
+    setDatasets(datasetItems);
     setNotifications(notificationItems);
     setApprovals(approvalItems);
     setDirectoryUsers(users);
@@ -108,11 +108,11 @@ export function App() {
 
   const applyRoute = useCallback(async (route: Route) => {
     setMenuOpen(false);
-    if (route.page === "detail" && route.resourceId && route.version) {
-      setSelected(await api.resource(route.resourceId, route.version));
-    } else if (route.page === "new-version" && route.resourceId) {
-      const versions = await api.resourceVersions(route.resourceId);
-      if (versions.length === 0) throw new Error("Ressource nicht gefunden");
+    if (route.page === "detail" && route.datasetId && route.version) {
+      setSelected(await api.dataset(route.datasetId, route.version));
+    } else if (route.page === "new-version" && route.datasetId) {
+      const versions = await api.datasetVersions(route.datasetId);
+      if (versions.length === 0) throw new Error("Datensatz nicht gefunden");
       setSelected(versions[0]);
     } else {
       setSelected(null);
@@ -148,13 +148,13 @@ export function App() {
   }, [applyRoute, refresh]);
 
   useEffect(() => {
-    if (initialLoading || page !== "resources") return;
+    if (initialLoading || page !== "datasets") return;
     const controller = new AbortController();
     const timer = window.setTimeout(() => {
       setSearchLoading(true);
       api
-        .resources(query, controller.signal)
-        .then(setResources)
+        .datasets(query, controller.signal)
+        .then(setDatasets)
         .catch((error) => {
           if (error.name !== "AbortError") setMessage(error.message);
         })
@@ -175,24 +175,24 @@ export function App() {
     setPage(next);
   };
 
-  const searchResources = (nextQuery: string) => {
+  const searchDatasets = (nextQuery: string) => {
     setQuery(nextQuery);
-    if (page !== "resources") navigate("resources");
+    if (page !== "datasets") navigate("datasets");
   };
 
-  const openResource = async (id: string, version: number) => {
+  const openDataset = async (id: string, version: number) => {
     try {
-      const resource = await api.resource(id, version);
-      setSelected(resource);
+      const dataset = await api.dataset(id, version);
+      setSelected(dataset);
       setPage("detail");
       setMenuOpen(false);
       window.history.pushState(
         {},
         "",
-        `/resources/${encodeURIComponent(id)}/versions/${version}`,
+        `/datasets/${encodeURIComponent(id)}/versions/${version}`,
       );
     } catch (error) {
-      setMessage(error instanceof Error ? error.message : "Ressource konnte nicht geladen werden");
+      setMessage(error instanceof Error ? error.message : "Datensatz konnte nicht geladen werden");
     }
   };
 
@@ -202,24 +202,24 @@ export function App() {
     window.history.pushState(
       {},
       "",
-      `/resources/${encodeURIComponent(selected.id)}/versions/new`,
+      `/datasets/${encodeURIComponent(selected.id)}/versions/new`,
     );
   };
 
-  const openSavedResource = async (resource: Resource) => {
-    setSelected(resource);
+  const openSavedDataset = async (dataset: Dataset) => {
+    setSelected(dataset);
     setPage("detail");
     window.history.replaceState(
       {},
       "",
-      `/resources/${encodeURIComponent(resource.id)}/versions/${resource.version.number}`,
+      `/datasets/${encodeURIComponent(dataset.id)}/versions/${dataset.version.number}`,
     );
     await refresh();
   };
 
   const reloadSelected = async () => {
     if (!selected) return;
-    setSelected(await api.resource(selected.id, selected.version.number));
+    setSelected(await api.dataset(selected.id, selected.version.number));
     await refresh();
   };
 
@@ -278,8 +278,8 @@ export function App() {
         </div>
         <div className="workspace">Arbeitsbereich</div>
         <nav className="primary-navigation" aria-label="Hauptnavigation">
-          {navButton("resources", "Ressourcen", "▦")}
-          {navButton("upload", "Ressource anlegen", "＋")}
+          {navButton("datasets", "Datensätze", "▦")}
+          {navButton("upload", "Datensatz anlegen", "＋")}
           {canApprove && navButton("approvals", "Freigaben", "✓", approvals.length)}
           {navButton("notifications", "Benachrichtigungen", "♧", unread)}
           {isAdmin && navButton("admin", "Verwaltung", "⚙")}
@@ -305,15 +305,15 @@ export function App() {
             ☰
           </button>
           <div className="search">
-            <label className="sr-only" htmlFor="resource-search">
-              Ressourcen durchsuchen
+            <label className="sr-only" htmlFor="dataset-search">
+              Datensätze durchsuchen
             </label>
             <input
-              id="resource-search"
+              id="dataset-search"
               type="search"
               value={query}
               placeholder="Titel, Beschreibung, Schlagwort …"
-              onChange={(event) => searchResources(event.target.value)}
+              onChange={(event) => searchDatasets(event.target.value)}
             />
           </div>
           <div className="header-actions">
@@ -350,47 +350,47 @@ export function App() {
             </div>
           )}
 
-          {page === "resources" && (
-            <ResourceList
-              items={resources}
+          {page === "datasets" && (
+            <DatasetList
+              items={datasets}
               loading={searchLoading}
-              onOpen={openResource}
+              onOpen={openDataset}
               onUpload={() => navigate("upload")}
             />
           )}
           {page === "upload" && (
-            <ResourceForm
+            <DatasetForm
               projects={projects}
-              onDone={openSavedResource}
+              onDone={openSavedDataset}
               onError={setMessage}
             />
           )}
           {page === "new-version" && selected && (
-            <ResourceForm
+            <DatasetForm
               projects={projects}
               base={selected}
-              onDone={openSavedResource}
+              onDone={openSavedDataset}
               onError={setMessage}
             />
           )}
           {page === "detail" && selected && (
-            <ResourceDetail
+            <DatasetDetail
               item={selected}
               user={user}
-              onBack={() => navigate("resources")}
-              onOpenVersion={(version) => openResource(selected.id, version)}
+              onBack={() => navigate("datasets")}
+              onOpenVersion={(version) => openDataset(selected.id, version)}
               onNewVersion={openNewVersion}
               onReload={reloadSelected}
               onError={setMessage}
             />
           )}
           {page === "approvals" && (
-            <Approvals items={approvals} onOpen={openResource} />
+            <Approvals items={approvals} onOpen={openDataset} />
           )}
           {page === "notifications" && (
             <Notifications
               items={notifications}
-              onOpen={openResource}
+              onOpen={openDataset}
               onChanged={refresh}
               onError={setMessage}
             />
