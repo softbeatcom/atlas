@@ -23,6 +23,37 @@ cp .env.example .env
 docker compose up --build
 ```
 
+### Interner Python-Paketmirror
+
+Für einen normalen Build über PyPI verwende ausschließlich die
+Standard-Compose-Datei; sie baut mit `backend/Dockerfile`:
+
+```bash
+docker compose up --build
+```
+
+Wenn Docker-Abhängigkeiten über einen internen Artifactory-Mirror bezogen
+werden, verwende stattdessen `backend/Dockerfile.artifactory` zusammen mit dem
+Compose-Override. Lege dessen `pip.conf` und das Root-CA-Zertifikat außerhalb
+dieses Repositories ab und trage auf dem Docker-Host die absoluten Pfade in
+`.env` ein:
+
+```bash
+PIP_CONFIG_FILE=/path/to/pip.conf
+CORPORATE_CA_FILE=/path/to/company-root-ca.crt
+```
+
+Starte den Stack dann mit:
+
+```bash
+docker compose -f docker-compose.yml -f docker-compose.artifactory.yml up --build
+```
+
+Compose stellt beide Dateien nur während des Image-Builds als BuildKit-Secrets
+bereit. Sie werden weder in das Image kopiert noch im Repository gespeichert.
+Die `pip.conf` muss den Artifactory-`index-url` enthalten; das Zertifikat muss
+PEM-formatiert sein und die Endung `.crt` haben.
+
 Danach stehen folgende Endpunkte bereit:
 
 - Anwendung: `http://localhost:5173`

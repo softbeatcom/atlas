@@ -33,3 +33,7 @@ frontend/*.tsbuildinfo
 
 # Local browser-automation state
 .playwright-cli/
+
+.dev
+
+AGENTS.md

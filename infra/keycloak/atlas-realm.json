@@ -4,12 +4,12 @@
   "roles": { "realm": [ {"name":"user"}, {"name":"approver"}, {"name":"auditor"}, {"name":"admin"} ] },
   "clients": [
     {
-      "clientId": "atlas-web", "name": "Softbeat Atlas Web", "publicClient": true, "standardFlowEnabled": true,
+      "clientId": "atlas-web", "name": "SoftBeat Atlas Web", "publicClient": true, "standardFlowEnabled": true,
       "directAccessGrantsEnabled": false, "redirectUris": ["http://localhost:5173/*"], "webOrigins": ["http://localhost:5173"],
       "protocol": "openid-connect", "attributes": {"pkce.code.challenge.method":"S256"},
       "protocolMappers": [{"name":"atlas-api audience","protocol":"openid-connect","protocolMapper":"oidc-audience-mapper","consentRequired":false,"config":{"included.client.audience":"atlas-api","access.token.claim":"true","id.token.claim":"false"}}]
     },
-    { "clientId": "atlas-api", "name": "Softbeat Atlas API", "bearerOnly": true, "protocol": "openid-connect" }
+    { "clientId": "atlas-api", "name": "SoftBeat Atlas API", "bearerOnly": true, "protocol": "openid-connect" }
   ],
   "users": [
     {"id":"00000000-0000-4000-8000-000000000001","username":"admin","enabled":true,"credentials":[{"type":"password","value":"password","temporary":false}],"realmRoles":["user","admin","approver"]},
