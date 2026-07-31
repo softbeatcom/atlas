@@ -170,7 +170,37 @@ npm install
 npm run dev
 ```
 
-Das Entwicklungsfrontend liest die `VITE_*`-Variablen zur Build-Zeit. Das Produktionsfrontend liest dieselben Werte zur Laufzeit aus `/runtime-config.js`.
+## Konfiguration
+
+Kopiere für Docker Compose zuerst `.env.example` nach `.env`. Die Datei enthält die
+Verbindungsdaten für PostgreSQL, die öffentlichen API- und Keycloak-URLs sowie die
+Frontend-Anmeldung. Bewahre echte Zugangsdaten ausschließlich außerhalb des Repositories
+auf. Das Entwicklungsfrontend liest `VITE_*`-Variablen zur Build-Zeit; das
+Produktionsfrontend liest sie beim Start aus `/runtime-config.js`, sodass ein neues Image
+für Konfigurationsänderungen nicht erforderlich ist.
+
+### Erscheinungsbild
+
+Betreibende können die Hauptfarben ohne ein neues Frontend-Image festlegen. Setze dazu in
+der Compose-`.env` oder den Helm-Werten eine oder mehrere der folgenden optionalen
+Variablen auf eine Hex-Farbe (`#RGB`, `#RGBA`, `#RRGGBB` oder `#RRGGBBAA`):
+
+```dotenv
+VITE_THEME_PRIMARY_COLOR=#1f6feb
+VITE_THEME_PRIMARY_HOVER_COLOR=#1757b8
+VITE_THEME_SIDEBAR_COLOR=#102a43
+VITE_THEME_SURFACE_COLOR=#f4f8fc
+VITE_THEME_ACCENT_COLOR=#79c2ff
+```
+
+`PRIMARY` steuert primäre Aktionen und Links, `SIDEBAR` die Navigation, `SURFACE` den
+Seitenhintergrund und `ACCENT` die Markenmarkierung. Nicht gesetzte Werte behalten das
+Atlas-Standarddesign. Wähle Farben mit ausreichendem Kontrast zu weißem Text; ungültige
+Werte werden bewusst ignoriert.
+
+Im Helm-Chart heißen die entsprechenden Werte `config.themePrimaryColor`,
+`config.themePrimaryHoverColor`, `config.themeSidebarColor`, `config.themeSurfaceColor`
+und `config.themeAccentColor`.
 
 ## Qualitätssicherung
 
@@ -220,6 +250,20 @@ Für berechtigte Nutzer liefert
 als DCAT JSON-LD. Die Download-URLs bleiben ebenfalls berechtigungsgeschützt.
 Setze `PUBLIC_API_URL` auf die von Nutzenden erreichbare API-Basis-URL, damit
 sie außerhalb der lokalen Entwicklung korrekt sind.
+
+Für die Integration eines exakten Datensatzstands verwende
+`GET /api/v1/datasets/{id}/versions/{number}`. Beide Endpunkte erwarten einen
+OIDC-Bearer-Token einer Identität mit Zugriffsrecht auf den Datensatz, zum Beispiel:
+
+```bash
+curl --fail --location \
+  -H "Authorization: Bearer $ATLAS_ACCESS_TOKEN" \
+  "https://atlas.example/api/v1/datasets/ds_example/versions/1"
+```
+
+Speichere Tokens nicht im Quellcode oder in Pipeline-Definitionen. Verwende für
+unbeaufsichtigte Abläufe eine entsprechend berechtigte OIDC-Identität und einen
+sicheren Secret-Speicher.
 
 ## Produktionskonfiguration
 

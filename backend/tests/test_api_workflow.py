@@ -1,5 +1,6 @@
 import pytest
 
+from app.auth import CurrentUser
 from app.demo import DEMO_SUBJECTS
 
 pytestmark = pytest.mark.anyio
@@ -47,3 +48,13 @@ async def test_dataset_approval_and_dcat_export(api_harness):
     exported = await client.get(f"/api/v1/datasets/{dataset_id}/versions/1/dcat.jsonld")
     assert exported.headers["content-type"].startswith("application/ld+json")
     assert len(exported.json()["dcat:distribution"]) == 2
+    detail = await client.get(f"/api/v1/datasets/{dataset_id}/versions/1")
+    assert detail.status_code == 200
+    assert detail.json()["id"] == dataset_id
+    assert detail.json()["version"]["number"] == 1
+
+    api_harness.active_user["value"] = CurrentUser("outside-user", "outside", frozenset({"user"}))
+    assert (
+        await client.get(f"/api/v1/datasets/{dataset_id}/versions/1/dcat.jsonld")
+    ).status_code == 404
+    assert (await client.get(f"/api/v1/datasets/{dataset_id}/versions/1")).status_code == 404

@@ -73,6 +73,8 @@ export const api = {
         ? `/datasets/${id}`
         : `/datasets/${id}/versions/${version}`,
     ),
+  datasetVersionUrl: (id: string, version: number) =>
+    `${config.apiUrl}/datasets/${encodeURIComponent(id)}/versions/${version}`,
   datasetVersions: (id: string) =>
     request<Dataset[]>(`/datasets/${id}/versions`),
   notifications: () => request<Notification[]>("/notifications"),
@@ -130,9 +132,14 @@ export const api = {
       method: "POST",
     }),
   audit: () => request<AuditEvent[]>("/audit-events"),
-  async content(id: string, version: number, distributionId: string) {
+  async content(
+    id: string,
+    version: number,
+    distributionId: string,
+    inline = true,
+  ) {
     const response = await fetch(
-      `${config.apiUrl}/datasets/${id}/versions/${version}/distributions/${distributionId}/content?inline=true`,
+      `${config.apiUrl}/datasets/${encodeURIComponent(id)}/versions/${version}/distributions/${encodeURIComponent(distributionId)}/content?inline=${inline}`,
       { headers: { Authorization: `Bearer ${await token()}` } },
     );
     if (!response.ok) {
@@ -142,5 +149,15 @@ export const api = {
       blob: await response.blob(),
       type: response.headers.get("content-type") ?? "application/octet-stream",
     };
+  },
+  async dcat(id: string, version: number): Promise<Blob> {
+    const response = await fetch(
+      `${config.apiUrl}/datasets/${encodeURIComponent(id)}/versions/${version}/dcat.jsonld`,
+      { headers: { Authorization: `Bearer ${await token()}` } },
+    );
+    if (!response.ok) {
+      throw new ApiError("DCAT-Metadaten konnten nicht geladen werden", response.status);
+    }
+    return response.blob();
   },
 };

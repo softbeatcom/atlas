@@ -1,11 +1,13 @@
 import { useMemo, useState } from "react";
 import { api } from "../api";
+import { Icon } from "../icons";
 import type {
   DirectoryUser,
   Membership,
   MembershipRole,
   Project,
 } from "../types";
+import { ConfirmDialog } from "../ui";
 
 export function AdminProjects({
   projects,
@@ -21,6 +23,7 @@ export function AdminProjects({
   const [selected, setSelected] = useState<Project | null>(null);
   const [members, setMembers] = useState<Membership[]>([]);
   const [busy, setBusy] = useState(false);
+  const [memberToRemove, setMemberToRemove] = useState<string | null>(null);
   const usersBySubject = useMemo(
     () => new Map(users.map((user) => [user.subject, user])),
     [users],
@@ -97,12 +100,13 @@ export function AdminProjects({
     }
   };
 
-  const removeMember = async (subject: string) => {
-    if (!selected) return;
+  const removeMember = async () => {
+    if (!selected || !memberToRemove) return;
     setBusy(true);
     try {
-      await api.removeMember(selected.id, subject);
+      await api.removeMember(selected.id, memberToRemove);
       setMembers(await api.members(selected.id));
+      setMemberToRemove(null);
     } catch (error) {
       onError(error instanceof Error ? error.message : "Mitglied konnte nicht entfernt werden");
     } finally {
@@ -112,8 +116,10 @@ export function AdminProjects({
 
   return (
     <>
-      <div className="eyebrow">Verwaltung</div>
       <h1>Projekte und Zugriffe</h1>
+      <p>
+        Sichtbarkeit, Freigaberegeln und Zuständigkeiten zentral verwalten.
+      </p>
       <div className="admin-grid">
         <section className="card form">
           <h2>Neues Projekt</h2>
@@ -149,8 +155,10 @@ export function AdminProjects({
             >
               {project.name}
               <small>
-                {project.visibility} ·{" "}
-                {project.approval_required ? "Freigabe" : "direkt"}
+                {project.visibility === "organization"
+                  ? "Organisationsweit"
+                  : "Projektintern"}{" "}
+                · {project.approval_required ? "mit Freigabe" : "direkt"}
               </small>
             </button>
           ))}
@@ -223,7 +231,7 @@ export function AdminProjects({
                   Projektrolle
                   <select name="role">
                     <option value="member">Mitglied</option>
-                    <option value="approver">Approver</option>
+                    <option value="approver">Freigabeberechtigt</option>
                   </select>
                 </label>
                 <button className="primary" disabled={busy}>
@@ -242,7 +250,9 @@ export function AdminProjects({
                           {directoryUser?.username
                             ? `@${directoryUser.username} · `
                             : ""}
-                          {member.role}
+                          {member.role === "approver"
+                            ? "Freigabeberechtigt"
+                            : "Mitglied"}
                         </small>
                       </span>
                       <button
@@ -250,8 +260,9 @@ export function AdminProjects({
                         type="button"
                         disabled={busy}
                         aria-label={`${directoryUser?.display_name ?? member.subject} entfernen`}
-                        onClick={() => removeMember(member.subject)}
+                        onClick={() => setMemberToRemove(member.subject)}
                       >
+                        <Icon name="close" size={14} />
                         Entfernen
                       </button>
                     </div>
@@ -262,6 +273,19 @@ export function AdminProjects({
           )}
         </section>
       </div>
+      <ConfirmDialog
+        busy={busy}
+        confirmLabel="Zugriff entfernen"
+        onCancel={() => setMemberToRemove(null)}
+        onConfirm={() => void removeMember()}
+        open={memberToRemove !== null}
+        title="Projektzugriff entfernen?"
+        tone="danger"
+      >
+        {memberToRemove
+          ? `${usersBySubject.get(memberToRemove)?.display_name ?? memberToRemove} verliert den Zugriff auf ${selected?.name ?? "dieses Projekt"}.`
+          : null}
+      </ConfirmDialog>
     </>
   );
 }

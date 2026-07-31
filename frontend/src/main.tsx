@@ -2,9 +2,22 @@ import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import { App } from "./App";
 import { keycloak } from "./auth";
+import { config } from "./config";
 import "./styles.css";
 
 const root = createRoot(document.getElementById("root")!);
+
+const themeVariables = {
+  "--green": config.theme.primary,
+  "--green-hover": config.theme.primaryHover,
+  "--dark": config.theme.sidebar,
+  "--surface": config.theme.surface,
+  "--sidebar-accent": config.theme.accent,
+};
+
+for (const [name, color] of Object.entries(themeVariables)) {
+  if (color) document.documentElement.style.setProperty(name, color);
+}
 
 keycloak
   .init({

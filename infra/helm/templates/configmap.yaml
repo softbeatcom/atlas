@@ -14,3 +14,8 @@ data:
   VITE_KEYCLOAK_URL: {{ .Values.config.keycloakUrl | quote }}
   VITE_KEYCLOAK_REALM: {{ .Values.config.keycloakRealm | quote }}
   VITE_KEYCLOAK_CLIENT_ID: {{ .Values.config.keycloakClientId | quote }}
+  VITE_THEME_PRIMARY_COLOR: {{ .Values.config.themePrimaryColor | quote }}
+  VITE_THEME_PRIMARY_HOVER_COLOR: {{ .Values.config.themePrimaryHoverColor | quote }}
+  VITE_THEME_SIDEBAR_COLOR: {{ .Values.config.themeSidebarColor | quote }}
+  VITE_THEME_SURFACE_COLOR: {{ .Values.config.themeSurfaceColor | quote }}
+  VITE_THEME_ACCENT_COLOR: {{ .Values.config.themeAccentColor | quote }}

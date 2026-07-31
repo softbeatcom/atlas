@@ -27,6 +27,7 @@ test("production server exposes health, runtime config, security headers, and SP
       VITE_KEYCLOAK_URL: "https://login.example",
       VITE_KEYCLOAK_REALM: "atlas",
       VITE_KEYCLOAK_CLIENT_ID: "atlas-web",
+      VITE_THEME_PRIMARY_COLOR: "#1f6feb",
     },
     stdio: ["ignore", "pipe", "pipe"],
   });
@@ -45,7 +46,9 @@ test("production server exposes health, runtime config, security headers, and SP
 
   const runtime = await fetch(`http://127.0.0.1:${port}/runtime-config.js`);
   assert.equal(runtime.status, 200);
-  assert.match(await runtime.text(), /https:\/\/atlas\.example\/api\/v1/);
+  const runtimeBody = await runtime.text();
+  assert.match(runtimeBody, /https:\/\/atlas\.example\/api\/v1/);
+  assert.match(runtimeBody, /#1f6feb/);
   assert.equal(runtime.headers.get("cache-control"), "no-store");
 
   const deepLink = await fetch(

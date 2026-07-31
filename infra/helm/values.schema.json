@@ -45,7 +45,12 @@
         "apiUrl": { "type": "string" },
         "keycloakUrl": { "type": "string" },
         "keycloakRealm": { "type": "string", "minLength": 1 },
-        "keycloakClientId": { "type": "string", "minLength": 1 }
+        "keycloakClientId": { "type": "string", "minLength": 1 },
+        "themePrimaryColor": { "type": "string", "pattern": "^$|^#([0-9A-Fa-f]{3}|[0-9A-Fa-f]{4}|[0-9A-Fa-f]{6}|[0-9A-Fa-f]{8})$" },
+        "themePrimaryHoverColor": { "type": "string", "pattern": "^$|^#([0-9A-Fa-f]{3}|[0-9A-Fa-f]{4}|[0-9A-Fa-f]{6}|[0-9A-Fa-f]{8})$" },
+        "themeSidebarColor": { "type": "string", "pattern": "^$|^#([0-9A-Fa-f]{3}|[0-9A-Fa-f]{4}|[0-9A-Fa-f]{6}|[0-9A-Fa-f]{8})$" },
+        "themeSurfaceColor": { "type": "string", "pattern": "^$|^#([0-9A-Fa-f]{3}|[0-9A-Fa-f]{4}|[0-9A-Fa-f]{6}|[0-9A-Fa-f]{8})$" },
+        "themeAccentColor": { "type": "string", "pattern": "^$|^#([0-9A-Fa-f]{3}|[0-9A-Fa-f]{4}|[0-9A-Fa-f]{6}|[0-9A-Fa-f]{8})$" }
       }
     },
     "storage": {

@@ -33,6 +33,11 @@ config:
   keycloakUrl: ""
   keycloakRealm: atlas
   keycloakClientId: atlas-web
+  themePrimaryColor: ""
+  themePrimaryHoverColor: ""
+  themeSidebarColor: ""
+  themeSurfaceColor: ""
+  themeAccentColor: ""
 
 storage:
   existingClaim: ""

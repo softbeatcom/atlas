@@ -11,7 +11,7 @@ function SearchHarness({ onFiltersChange }: { onFiltersChange: (filters: Dataset
     setFilters(next);
     onFiltersChange(next);
   };
-  return <DatasetList items={[]} loading={false} filters={filters} facets={{ projects: [{ id: "project-1", name: "Klima", visibility: "project", approval_required: false }], keywords: ["Klima", "Messung"], suffixes: ["csv", "json"] }} onOpen={vi.fn()} onUpload={vi.fn()} onFiltersChange={update} />;
+  return <DatasetList items={[]} loading={false} filters={filters} facets={{ projects: [{ id: "project-1", name: "Klima", visibility: "project", approval_required: false }], keywords: ["Klima", "Messung"], suffixes: ["csv", "json"] }} onOpen={vi.fn()} onUpload={vi.fn()} onFiltersChange={update} sort="updated-desc" onSortChange={vi.fn()} />;
 }
 
 describe("dataset search filters", () => {
@@ -20,13 +20,13 @@ describe("dataset search filters", () => {
     const onFiltersChange = vi.fn();
     render(<SearchHarness onFiltersChange={onFiltersChange} />);
 
-    await user.click(screen.getByRole("button", { name: "Filter anzeigen" }));
-    await user.type(screen.getByLabelText("Titel"), "Messung");
-    expect(onFiltersChange).toHaveBeenLastCalledWith({ title: "Messung" });
+    await user.click(screen.getByRole("button", { name: "Schlagwörter: Alle" }));
+    await user.click(screen.getByRole("checkbox", { name: "Messung" }));
+    expect(onFiltersChange).toHaveBeenLastCalledWith({ tags: ["Messung"] });
 
-    await user.click(screen.getByRole("button", { name: "Dateiendungen: Alle auswählen" }));
+    await user.click(screen.getByRole("button", { name: "Dateiendungen: Alle" }));
     await user.click(screen.getByRole("checkbox", { name: ".csv" }));
-    expect(onFiltersChange).toHaveBeenLastCalledWith({ title: "Messung", suffixes: ["csv"] });
+    expect(onFiltersChange).toHaveBeenLastCalledWith({ tags: ["Messung"], suffixes: ["csv"] });
 
     await user.click(screen.getByRole("button", { name: "Filter zurücksetzen" }));
     expect(onFiltersChange).toHaveBeenLastCalledWith({});
