@@ -1,5 +1,6 @@
 from collections.abc import AsyncIterator
 from dataclasses import dataclass
+from pathlib import Path
 
 import httpx2
 import pytest
@@ -21,6 +22,8 @@ from app.storage import storage
 class ApiHarness:
     client: httpx2.AsyncClient
     active_user: dict[str, CurrentUser]
+    sessions: sessionmaker[Session]
+    storage_root: Path
 
     def login(self, username: str, *roles: str) -> None:
         self.active_user["value"] = CurrentUser(
@@ -72,7 +75,7 @@ async def api_harness(monkeypatch, tmp_path) -> AsyncIterator[ApiHarness]:
         transport=httpx2.ASGITransport(app=main.app),
         base_url="http://test",
     ) as client:
-        yield ApiHarness(client, active_user)
+        yield ApiHarness(client, active_user, sessions, tmp_path)
 
     main.app.dependency_overrides.clear()
     engine.dispose()

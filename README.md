@@ -62,6 +62,7 @@ Danach stehen folgende Endpunkte bereit:
 
 Compose startet PostgreSQL, Keycloak, Backend und das statisch gebaute Frontend. Das Backend führt ausstehende Alembic-Migrationen vor dem Start automatisch aus. Ein Schema, das mit einer älteren Atlas-Version über `create_all` erzeugt wurde, wird als Ausgangsversion erkannt und anschließend migriert.
 
+
 ### Health-Check-Einträge im Log
 
 Docker Compose prüft Backend und Frontend alle fünf Sekunden über `/health` beziehungsweise `/healthz`. Im Backend-Log erscheinen deshalb regelmäßig erfolgreiche Zugriffe wie:
@@ -83,6 +84,31 @@ Der Demo-Realm enthält diese Nutzer:
 
 Die Demo-Zugangsdaten, Keycloak `start-dev` und die lokalen Standardpasswörter sind ausschließlich für die lokale Entwicklung vorgesehen.
 
+### Umfangreichen Demo-Suchkorpus einrichten
+
+Für die Beurteilung von Suche, Filtern, Berechtigungen und Freigabezuständen kann ein
+deterministischer Demo-Korpus angelegt werden:
+
+```bash
+./setup-demo-data.sh
+```
+
+**Achtung:** Das Skript entfernt alle lokalen Atlas-Metadaten, Docker-Compose-Volumes
+und Dateien unter `data/storage` unwiderruflich. Vor dem Zurücksetzen muss deshalb
+`RESET` bestätigt werden. Für einen bewusst nicht-interaktiven Aufruf steht
+`./setup-demo-data.sh --yes` zur Verfügung.
+
+Das Skript startet anschließend den vollständigen Stack und erzeugt 100 Datensätze mit
+120 Versionen und 180 kleinen Beispieldateien. Der Korpus enthält deutsche
+Business-Metadaten mit einigen englischen Beispielen, sechs Projekte, private
+Datensätze, unterschiedliche Sichtbarkeiten sowie veröffentlichte, offene, abgelehnte
+und noch nicht eingereichte Stände. Die Formate CSV, JSON, Text, Markdown, PDF, XML,
+ZIP und PNG ermöglichen außerdem die Beurteilung der Dateiformatfilter und Vorschauen.
+
+Für unterschiedliche Suchperspektiven eignen sich insbesondere `alice` als
+Beitragende, `bob` als Projekt-Freigeber, `admin` mit vollständigem Zugriff und
+`auditor` mit organisationsweiter Metadateneinsicht ohne Zugriff auf Rohdateien.
+
 Dateien bis 100 MiB werden unter `./data/storage` abgelegt. Aktive Formate wie HTML und SVG werden nicht inline dargestellt. Vorschauen sind auf erkanntes PDF und sicheren Klartext begrenzt.
 
 ### Storage-Berechtigungen
@@ -91,10 +117,11 @@ Compose richtet das Storage-Stammverzeichnis vor jedem Backend-Start für die fe
 
 ### Entwicklungsdaten zurücksetzen
 
-Die Metadaten liegen in PostgreSQL, die Rohdateien als Host-Bind-Mount unter
-`./data/storage`. Das Storage ist **kein** benanntes Docker-Volume:
-`docker compose down --volumes` entfernt daher die Metadaten-Datenbank, aber
-nicht die hochgeladenen Dateien.
+Die Metadaten liegen in PostgreSQL, die RDF-Projektion im benannten Volume
+`rdf-data` und die Rohdateien als Host-Bind-Mount unter `./data/storage`. Das
+Datei-Storage ist **kein** benanntes Docker-Volume: `docker compose down
+--volumes` entfernt daher Metadaten-Datenbank und RDF-Projektion, aber nicht die
+hochgeladenen Dateien.
 
 Um nur die Rohdateien zu entfernen, ohne die Datenbank zurückzusetzen, führe
 aus `atlas/` Folgendes aus:
@@ -149,16 +176,18 @@ Backend:
 ```bash
 cd backend
 python3 -m venv .venv
-.venv/bin/pip install -e '.[dev]' -c constraints.txt
+.venv/bin/pip install -e '.[dev,rdf]' -c constraints.txt
 DATABASE_URL=postgresql+psycopg://atlas:atlas@localhost:5432/atlas \
 KEYCLOAK_ISSUER=http://localhost:8080/realms/atlas \
 KEYCLOAK_JWKS_URL=http://localhost:8080/realms/atlas/protocol/openid-connect/certs \
 SEED_DEMO_DATA=true \
+RDF_GRAPH_ENABLED=true \
 .venv/bin/python -m app.migrate
 DATABASE_URL=postgresql+psycopg://atlas:atlas@localhost:5432/atlas \
 KEYCLOAK_ISSUER=http://localhost:8080/realms/atlas \
 KEYCLOAK_JWKS_URL=http://localhost:8080/realms/atlas/protocol/openid-connect/certs \
 SEED_DEMO_DATA=true \
+RDF_GRAPH_ENABLED=true \
 .venv/bin/uvicorn app.main:app --reload
 ```
 
