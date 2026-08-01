@@ -1,0 +1,6 @@
+apiVersion: v2
+name: softbeat-atlas
+description: SoftBeat Atlas MVP repository
+type: application
+version: 0.1.0
+appVersion: 0.1.0

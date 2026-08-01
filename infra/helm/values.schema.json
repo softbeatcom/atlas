@@ -1,0 +1,79 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "required": ["backend", "frontend", "config", "storage", "ingress"],
+  "properties": {
+    "backend": {
+      "type": "object",
+      "required": ["image", "replicas", "databaseSecretName", "databaseSecretKey"],
+      "properties": {
+        "image": { "type": "string", "minLength": 1 },
+        "imagePullPolicy": { "enum": ["Always", "IfNotPresent", "Never"] },
+        "replicas": { "type": "integer", "minimum": 1, "maximum": 1 },
+        "databaseSecretName": { "type": "string", "minLength": 1 },
+        "databaseSecretKey": { "type": "string", "minLength": 1 },
+        "resources": { "type": "object" }
+      }
+    },
+    "frontend": {
+      "type": "object",
+      "required": ["image", "replicas"],
+      "properties": {
+        "image": { "type": "string", "minLength": 1 },
+        "imagePullPolicy": { "enum": ["Always", "IfNotPresent", "Never"] },
+        "replicas": { "type": "integer", "minimum": 1 },
+        "resources": { "type": "object" }
+      }
+    },
+    "config": {
+      "type": "object",
+      "required": [
+        "corsOrigins",
+        "keycloakIssuer",
+        "keycloakJwksUrl",
+        "keycloakAudience",
+        "apiUrl",
+        "keycloakUrl",
+        "keycloakRealm",
+        "keycloakClientId"
+      ],
+      "properties": {
+        "corsOrigins": { "type": "string" },
+        "keycloakIssuer": { "type": "string" },
+        "keycloakJwksUrl": { "type": "string" },
+        "keycloakAudience": { "type": "string", "minLength": 1 },
+        "apiUrl": { "type": "string" },
+        "keycloakUrl": { "type": "string" },
+        "keycloakRealm": { "type": "string", "minLength": 1 },
+        "keycloakClientId": { "type": "string", "minLength": 1 },
+        "themePrimaryColor": { "type": "string", "pattern": "^$|^#([0-9A-Fa-f]{3}|[0-9A-Fa-f]{4}|[0-9A-Fa-f]{6}|[0-9A-Fa-f]{8})$" },
+        "themePrimaryHoverColor": { "type": "string", "pattern": "^$|^#([0-9A-Fa-f]{3}|[0-9A-Fa-f]{4}|[0-9A-Fa-f]{6}|[0-9A-Fa-f]{8})$" },
+        "themeSidebarColor": { "type": "string", "pattern": "^$|^#([0-9A-Fa-f]{3}|[0-9A-Fa-f]{4}|[0-9A-Fa-f]{6}|[0-9A-Fa-f]{8})$" },
+        "themeSurfaceColor": { "type": "string", "pattern": "^$|^#([0-9A-Fa-f]{3}|[0-9A-Fa-f]{4}|[0-9A-Fa-f]{6}|[0-9A-Fa-f]{8})$" },
+        "themeAccentColor": { "type": "string", "pattern": "^$|^#([0-9A-Fa-f]{3}|[0-9A-Fa-f]{4}|[0-9A-Fa-f]{6}|[0-9A-Fa-f]{8})$" }
+      }
+    },
+    "storage": {
+      "type": "object",
+      "required": ["existingClaim", "size", "storageClassName"],
+      "properties": {
+        "existingClaim": { "type": "string" },
+        "size": {
+          "type": "string",
+          "pattern": "^[0-9]+(Mi|Gi|Ti)$"
+        },
+        "storageClassName": { "type": "string" }
+      }
+    },
+    "ingress": {
+      "type": "object",
+      "required": ["enabled", "className", "host", "tlsSecretName"],
+      "properties": {
+        "enabled": { "type": "boolean" },
+        "className": { "type": "string" },
+        "host": { "type": "string", "minLength": 1 },
+        "tlsSecretName": { "type": "string" }
+      }
+    }
+  }
+}

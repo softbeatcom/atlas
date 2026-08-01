@@ -1,0 +1,51 @@
+backend:
+  image: softbeat-atlas-api:0.1.0
+  imagePullPolicy: IfNotPresent
+  replicas: 1
+  databaseSecretName: atlas-database
+  databaseSecretKey: database-url
+  resources:
+    requests:
+      cpu: 100m
+      memory: 128Mi
+    limits:
+      cpu: 500m
+      memory: 512Mi
+
+frontend:
+  image: softbeat-atlas-web:0.1.0
+  imagePullPolicy: IfNotPresent
+  replicas: 1
+  resources:
+    requests:
+      cpu: 25m
+      memory: 32Mi
+    limits:
+      cpu: 200m
+      memory: 128Mi
+
+config:
+  corsOrigins: ""
+  keycloakIssuer: ""
+  keycloakJwksUrl: ""
+  keycloakAudience: atlas-api
+  apiUrl: ""
+  keycloakUrl: ""
+  keycloakRealm: atlas
+  keycloakClientId: atlas-web
+  themePrimaryColor: ""
+  themePrimaryHoverColor: ""
+  themeSidebarColor: ""
+  themeSurfaceColor: ""
+  themeAccentColor: ""
+
+storage:
+  existingClaim: ""
+  size: 10Gi
+  storageClassName: ""
+
+ingress:
+  enabled: false
+  className: ""
+  host: softbeat-atlas.example.com
+  tlsSecretName: ""

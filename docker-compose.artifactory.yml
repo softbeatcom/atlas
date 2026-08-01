@@ -1,0 +1,26 @@
+services:
+  storage-init:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile.artifactory
+      secrets:
+        - source: pip_config
+          target: pip_config
+        - source: corporate_ca
+          target: corporate_ca
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile.artifactory
+      secrets:
+        - source: pip_config
+          target: pip_config
+        - source: corporate_ca
+          target: corporate_ca
+
+secrets:
+  pip_config:
+    file: ${PIP_CONFIG_FILE:?Set PIP_CONFIG_FILE to the Artifactory pip.conf path}
+  corporate_ca:
+    file: ${CORPORATE_CA_FILE:?Set CORPORATE_CA_FILE to the corporate root CA path}
