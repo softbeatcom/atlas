@@ -7,7 +7,8 @@ WORKDIR /app
 COPY pyproject.toml constraints.txt alembic.ini ./
 COPY app ./app
 COPY migrations ./migrations
-RUN pip install --no-cache-dir -c constraints.txt .
+RUN pip install --no-cache-dir --upgrade pip && \
+    pip install --no-cache-dir -c constraints.txt .
 
 RUN addgroup --gid 1000 atlas \
     && adduser --uid 1000 --gid 1000 --disabled-password --gecos "" atlas
