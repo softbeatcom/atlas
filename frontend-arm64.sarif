@@ -1,0 +1,819 @@
+{
+  "version": "2.1.0",
+  "$schema": "https://raw.githubusercontent.com/oasis-tcs/sarif-spec/main/sarif-2.1/schema/sarif-schema-2.1.0.json",
+  "runs": [
+    {
+      "tool": {
+        "driver": {
+          "fullName": "Trivy Vulnerability Scanner",
+          "informationUri": "https://github.com/aquasecurity/trivy",
+          "name": "Trivy",
+          "rules": [
+            {
+              "id": "CVE-2026-48758",
+              "name": "LanguageSpecificPackageVulnerability",
+              "shortDescription": {
+                "text": "sigstore-core: @sigstore/core: Signature bypass due to incorrect encoding in preAuthEncoding"
+              },
+              "fullDescription": {
+                "text": "sigstore-js provides JavaScript libraries for interacting with Sigstore services. Prior to 3.2.1, the preAuthEncoding function in @sigstore/core uses Node.js ascii encoding when converting the PAE string to bytes, allowing payloadType to be mutated after signing without invalidating the signature and breaking the type-binding guarantee that DSSE is designed to provide. This issue is fixed in version 3.2.1."
+              },
+              "defaultConfiguration": {
+                "level": "warning"
+              },
+              "helpUri": "https://avd.aquasec.com/nvd/cve-2026-48758",
+              "help": {
+                "text": "Vulnerability CVE-2026-48758\nSeverity: MEDIUM\nPackage: @sigstore/core\nFixed Version: 3.2.1\nLink: [CVE-2026-48758](https://avd.aquasec.com/nvd/cve-2026-48758)\nsigstore-js provides JavaScript libraries for interacting with Sigstore services. Prior to 3.2.1, the preAuthEncoding function in @sigstore/core uses Node.js ascii encoding when converting the PAE string to bytes, allowing payloadType to be mutated after signing without invalidating the signature and breaking the type-binding guarantee that DSSE is designed to provide. This issue is fixed in version 3.2.1.",
+                "markdown": "**Vulnerability CVE-2026-48758**\n| Severity | Package | Fixed Version | Link |\n| --- | --- | --- | --- |\n|MEDIUM|@sigstore/core|3.2.1|[CVE-2026-48758](https://avd.aquasec.com/nvd/cve-2026-48758)|\n\nsigstore-js provides JavaScript libraries for interacting with Sigstore services. Prior to 3.2.1, the preAuthEncoding function in @sigstore/core uses Node.js ascii encoding when converting the PAE string to bytes, allowing payloadType to be mutated after signing without invalidating the signature and breaking the type-binding guarantee that DSSE is designed to provide. This issue is fixed in version 3.2.1."
+              },
+              "properties": {
+                "cvssv3_baseScore": 5.4,
+                "cvssv3_vector": "CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:U/C:N/I:L/A:L",
+                "precision": "very-high",
+                "security-severity": "5.4",
+                "tags": [
+                  "vulnerability",
+                  "security",
+                  "MEDIUM"
+                ]
+              }
+            },
+            {
+              "id": "CVE-2026-13149",
+              "name": "LanguageSpecificPackageVulnerability",
+              "shortDescription": {
+                "text": "brace-expansion: Brace-expansion: Denial of Service due to exponential-time complexity"
+              },
+              "fullDescription": {
+                "text": "brace-expansion through 5.0.6 is vulnerable to denial of service. The expand() function exhibits exponential-time complexity in the number of consecutive non-expanding '{}' brace groups. An attacker who passes a crafted string to expand(), directly or transitively, can cause significant CPU consumption and event-loop blocking. The max option does not mitigate this, as it bounds the output size rather than the recursion work."
+              },
+              "defaultConfiguration": {
+                "level": "error"
+              },
+              "helpUri": "https://avd.aquasec.com/nvd/cve-2026-13149",
+              "help": {
+                "text": "Vulnerability CVE-2026-13149\nSeverity: HIGH\nPackage: brace-expansion\nFixed Version: 5.0.7, 1.1.16, 2.1.2\nLink: [CVE-2026-13149](https://avd.aquasec.com/nvd/cve-2026-13149)\nbrace-expansion through 5.0.6 is vulnerable to denial of service. The expand() function exhibits exponential-time complexity in the number of consecutive non-expanding '{}' brace groups. An attacker who passes a crafted string to expand(), directly or transitively, can cause significant CPU consumption and event-loop blocking. The max option does not mitigate this, as it bounds the output size rather than the recursion work.",
+                "markdown": "**Vulnerability CVE-2026-13149**\n| Severity | Package | Fixed Version | Link |\n| --- | --- | --- | --- |\n|HIGH|brace-expansion|5.0.7, 1.1.16, 2.1.2|[CVE-2026-13149](https://avd.aquasec.com/nvd/cve-2026-13149)|\n\nbrace-expansion through 5.0.6 is vulnerable to denial of service. The expand() function exhibits exponential-time complexity in the number of consecutive non-expanding '{}' brace groups. An attacker who passes a crafted string to expand(), directly or transitively, can cause significant CPU consumption and event-loop blocking. The max option does not mitigate this, as it bounds the output size rather than the recursion work."
+              },
+              "properties": {
+                "cvssv3_baseScore": 5.3,
+                "cvssv3_vector": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:L",
+                "cvssv40_baseScore": 7.7,
+                "cvssv40_vector": "CVSS:4.0/AV:N/AC:L/AT:N/PR:N/UI:N/VC:N/VI:N/VA:H/SC:N/SI:N/SA:N/E:P/S:N/AU:Y/R:U/V:D/RE:M/U:Amber",
+                "precision": "very-high",
+                "security-severity": "5.3",
+                "tags": [
+                  "vulnerability",
+                  "security",
+                  "HIGH"
+                ]
+              }
+            },
+            {
+              "id": "CVE-2026-14257",
+              "name": "LanguageSpecificPackageVulnerability",
+              "shortDescription": {
+                "text": "brace-expansion through 5.0.7 is vulnerable to denial of service via m ..."
+              },
+              "fullDescription": {
+                "text": "brace-expansion through 5.0.7 is vulnerable to denial of service via memory exhaustion. The expand() function limits the number of results with a max option (default 100,000) but does not bound the length of each result string. By chaining multiple brace groups, an attacker keeps the result count under the limit while making each result progressively longer, so total memory scales with both count and string length until the process hits a fatal, uncatchable out-of-memory error. About 7.5 KB of input ('{a,b}'.repeat(1500)) crashes a default Node.js process. Any application that passes attacker-influenced strings to brace-expansion.expand() - directly or transitively via minimatch / glob brace patterns - can be crashed by a small request. Fixed in 5.0.8 by adding a maxLength option (default 4,000,000) that bounds accumulated output and intermediate arrays."
+              },
+              "defaultConfiguration": {
+                "level": "error"
+              },
+              "helpUri": "https://avd.aquasec.com/nvd/cve-2026-14257",
+              "help": {
+                "text": "Vulnerability CVE-2026-14257\nSeverity: HIGH\nPackage: brace-expansion\nFixed Version: 5.0.8, 3.0.3, 2.1.3, 1.1.17\nLink: [CVE-2026-14257](https://avd.aquasec.com/nvd/cve-2026-14257)\nbrace-expansion through 5.0.7 is vulnerable to denial of service via memory exhaustion. The expand() function limits the number of results with a max option (default 100,000) but does not bound the length of each result string. By chaining multiple brace groups, an attacker keeps the result count under the limit while making each result progressively longer, so total memory scales with both count and string length until the process hits a fatal, uncatchable out-of-memory error. About 7.5 KB of input ('{a,b}'.repeat(1500)) crashes a default Node.js process. Any application that passes attacker-influenced strings to brace-expansion.expand() - directly or transitively via minimatch / glob brace patterns - can be crashed by a small request. Fixed in 5.0.8 by adding a maxLength option (default 4,000,000) that bounds accumulated output and intermediate arrays.",
+                "markdown": "**Vulnerability CVE-2026-14257**\n| Severity | Package | Fixed Version | Link |\n| --- | --- | --- | --- |\n|HIGH|brace-expansion|5.0.8, 3.0.3, 2.1.3, 1.1.17|[CVE-2026-14257](https://avd.aquasec.com/nvd/cve-2026-14257)|\n\nbrace-expansion through 5.0.7 is vulnerable to denial of service via memory exhaustion. The expand() function limits the number of results with a max option (default 100,000) but does not bound the length of each result string. By chaining multiple brace groups, an attacker keeps the result count under the limit while making each result progressively longer, so total memory scales with both count and string length until the process hits a fatal, uncatchable out-of-memory error. About 7.5 KB of input ('{a,b}'.repeat(1500)) crashes a default Node.js process. Any application that passes attacker-influenced strings to brace-expansion.expand() - directly or transitively via minimatch / glob brace patterns - can be crashed by a small request. Fixed in 5.0.8 by adding a maxLength option (default 4,000,000) that bounds accumulated output and intermediate arrays."
+              },
+              "properties": {
+                "cvssv3_baseScore": 7.5,
+                "cvssv3_vector": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:H",
+                "precision": "very-high",
+                "security-severity": "7.5",
+                "tags": [
+                  "vulnerability",
+                  "security",
+                  "HIGH"
+                ]
+              }
+            },
+            {
+              "id": "CVE-2026-33750",
+              "name": "LanguageSpecificPackageVulnerability",
+              "shortDescription": {
+                "text": "brace-expansion: brace-expansion: Denial of Service via zero step value in brace pattern"
+              },
+              "fullDescription": {
+                "text": "The brace-expansion library generates arbitrary strings containing a common prefix and suffix. Prior to versions 5.0.5, 3.0.2, 2.0.3, and 1.1.13, a brace pattern with a zero step value (e.g., `{1..2..0}`) causes the sequence generation loop to run indefinitely, making the process hang for seconds and allocate heaps of memory. Versions 5.0.5, 3.0.2, 2.0.3, and 1.1.13 fix the issue. As a workaround, sanitize strings passed to `expand()` to ensure a step value of `0` is not used."
+              },
+              "defaultConfiguration": {
+                "level": "warning"
+              },
+              "helpUri": "https://avd.aquasec.com/nvd/cve-2026-33750",
+              "help": {
+                "text": "Vulnerability CVE-2026-33750\nSeverity: MEDIUM\nPackage: brace-expansion\nFixed Version: 5.0.5, 3.0.2, 2.0.3, 1.1.13\nLink: [CVE-2026-33750](https://avd.aquasec.com/nvd/cve-2026-33750)\nThe brace-expansion library generates arbitrary strings containing a common prefix and suffix. Prior to versions 5.0.5, 3.0.2, 2.0.3, and 1.1.13, a brace pattern with a zero step value (e.g., `{1..2..0}`) causes the sequence generation loop to run indefinitely, making the process hang for seconds and allocate heaps of memory. Versions 5.0.5, 3.0.2, 2.0.3, and 1.1.13 fix the issue. As a workaround, sanitize strings passed to `expand()` to ensure a step value of `0` is not used.",
+                "markdown": "**Vulnerability CVE-2026-33750**\n| Severity | Package | Fixed Version | Link |\n| --- | --- | --- | --- |\n|MEDIUM|brace-expansion|5.0.5, 3.0.2, 2.0.3, 1.1.13|[CVE-2026-33750](https://avd.aquasec.com/nvd/cve-2026-33750)|\n\nThe brace-expansion library generates arbitrary strings containing a common prefix and suffix. Prior to versions 5.0.5, 3.0.2, 2.0.3, and 1.1.13, a brace pattern with a zero step value (e.g., `{1..2..0}`) causes the sequence generation loop to run indefinitely, making the process hang for seconds and allocate heaps of memory. Versions 5.0.5, 3.0.2, 2.0.3, and 1.1.13 fix the issue. As a workaround, sanitize strings passed to `expand()` to ensure a step value of `0` is not used."
+              },
+              "properties": {
+                "cvssv3_baseScore": 6.5,
+                "cvssv3_vector": "CVSS:3.1/AV:N/AC:L/PR:N/UI:R/S:U/C:N/I:N/A:H",
+                "precision": "very-high",
+                "security-severity": "6.5",
+                "tags": [
+                  "vulnerability",
+                  "security",
+                  "MEDIUM"
+                ]
+              }
+            },
+            {
+              "id": "CVE-2026-42338",
+              "name": "LanguageSpecificPackageVulnerability",
+              "shortDescription": {
+                "text": "ip-address: ip-address: Cross-site scripting via improper HTML escaping of untrusted input"
+              },
+              "fullDescription": {
+                "text": "ip-address is a library for parsing and manipulating IPv4 and IPv6 addresses in JavaScript. Prior to 10.1.1, Address6.group() and Address6.link() do not HTML-escape attacker-controlled content before embedding it in the HTML strings they return, and AddressError.parseMessage (emitted by the Address6 constructor for invalid input) can contain unescaped attacker-controlled content in one branch. An application that (1) passes untrusted input to Address6 and (2) renders the output of these methods, or the thrown error's parseMessage, as HTML (e.g. via innerHTML) is vulnerable to cross-site scripting. This vulnerability is fixed in 10.1.1."
+              },
+              "defaultConfiguration": {
+                "level": "warning"
+              },
+              "helpUri": "https://avd.aquasec.com/nvd/cve-2026-42338",
+              "help": {
+                "text": "Vulnerability CVE-2026-42338\nSeverity: MEDIUM\nPackage: ip-address\nFixed Version: 10.1.1\nLink: [CVE-2026-42338](https://avd.aquasec.com/nvd/cve-2026-42338)\nip-address is a library for parsing and manipulating IPv4 and IPv6 addresses in JavaScript. Prior to 10.1.1, Address6.group() and Address6.link() do not HTML-escape attacker-controlled content before embedding it in the HTML strings they return, and AddressError.parseMessage (emitted by the Address6 constructor for invalid input) can contain unescaped attacker-controlled content in one branch. An application that (1) passes untrusted input to Address6 and (2) renders the output of these methods, or the thrown error's parseMessage, as HTML (e.g. via innerHTML) is vulnerable to cross-site scripting. This vulnerability is fixed in 10.1.1.",
+                "markdown": "**Vulnerability CVE-2026-42338**\n| Severity | Package | Fixed Version | Link |\n| --- | --- | --- | --- |\n|MEDIUM|ip-address|10.1.1|[CVE-2026-42338](https://avd.aquasec.com/nvd/cve-2026-42338)|\n\nip-address is a library for parsing and manipulating IPv4 and IPv6 addresses in JavaScript. Prior to 10.1.1, Address6.group() and Address6.link() do not HTML-escape attacker-controlled content before embedding it in the HTML strings they return, and AddressError.parseMessage (emitted by the Address6 constructor for invalid input) can contain unescaped attacker-controlled content in one branch. An application that (1) passes untrusted input to Address6 and (2) renders the output of these methods, or the thrown error's parseMessage, as HTML (e.g. via innerHTML) is vulnerable to cross-site scripting. This vulnerability is fixed in 10.1.1."
+              },
+              "properties": {
+                "cvssv40_baseScore": 5.3,
+                "cvssv40_vector": "CVSS:4.0/AV:N/AC:L/AT:N/PR:N/UI:P/VC:L/VI:L/VA:N/SC:N/SI:N/SA:N",
+                "precision": "very-high",
+                "security-severity": "5.5",
+                "tags": [
+                  "vulnerability",
+                  "security",
+                  "MEDIUM"
+                ]
+              }
+            },
+            {
+              "id": "CVE-2026-33671",
+              "name": "LanguageSpecificPackageVulnerability",
+              "shortDescription": {
+                "text": "picomatch: Picomatch: Regular Expression Denial of Service via crafted extglob patterns"
+              },
+              "fullDescription": {
+                "text": "Picomatch is a glob matcher written JavaScript. Versions prior to 4.0.4, 3.0.2, and 2.3.2 are vulnerable to Regular Expression Denial of Service (ReDoS) when processing crafted extglob patterns. Certain patterns using extglob quantifiers such as `+()` and `*()`, especially when combined with overlapping alternatives or nested extglobs, are compiled into regular expressions that can exhibit catastrophic backtracking on non-matching input. Applications are impacted when they allow untrusted users to supply glob patterns that are passed to `picomatch` for compilation or matching. In those cases, an attacker can cause excessive CPU consumption and block the Node.js event loop, resulting in a denial of service. Applications that only use trusted, developer-controlled glob patterns are much less likely to be exposed in a security-relevant way. This issue is fixed in picomatch 4.0.4, 3.0.2 and 2.3.2. Users should upgrade to one of these versions or later, depending on their supported release line. If upgrading is not immediately possible, avoid passing untrusted glob patterns to `picomatch`. Possible mitigations include disabling extglob support for untrusted patterns by using `noextglob: true`, rejecting or sanitizing patterns containing nested extglobs or extglob quantifiers such as `+()` and `*()`, enforcing strict allowlists for accepted pattern syntax, running matching in an isolated worker or separate process with time and resource limits, and applying application-level request throttling and input validation for any endpoint that accepts glob patterns."
+              },
+              "defaultConfiguration": {
+                "level": "error"
+              },
+              "helpUri": "https://avd.aquasec.com/nvd/cve-2026-33671",
+              "help": {
+                "text": "Vulnerability CVE-2026-33671\nSeverity: HIGH\nPackage: picomatch\nFixed Version: 4.0.4, 3.0.2, 2.3.2\nLink: [CVE-2026-33671](https://avd.aquasec.com/nvd/cve-2026-33671)\nPicomatch is a glob matcher written JavaScript. Versions prior to 4.0.4, 3.0.2, and 2.3.2 are vulnerable to Regular Expression Denial of Service (ReDoS) when processing crafted extglob patterns. Certain patterns using extglob quantifiers such as `+()` and `*()`, especially when combined with overlapping alternatives or nested extglobs, are compiled into regular expressions that can exhibit catastrophic backtracking on non-matching input. Applications are impacted when they allow untrusted users to supply glob patterns that are passed to `picomatch` for compilation or matching. In those cases, an attacker can cause excessive CPU consumption and block the Node.js event loop, resulting in a denial of service. Applications that only use trusted, developer-controlled glob patterns are much less likely to be exposed in a security-relevant way. This issue is fixed in picomatch 4.0.4, 3.0.2 and 2.3.2. Users should upgrade to one of these versions or later, depending on their supported release line. If upgrading is not immediately possible, avoid passing untrusted glob patterns to `picomatch`. Possible mitigations include disabling extglob support for untrusted patterns by using `noextglob: true`, rejecting or sanitizing patterns containing nested extglobs or extglob quantifiers such as `+()` and `*()`, enforcing strict allowlists for accepted pattern syntax, running matching in an isolated worker or separate process with time and resource limits, and applying application-level request throttling and input validation for any endpoint that accepts glob patterns.",
+                "markdown": "**Vulnerability CVE-2026-33671**\n| Severity | Package | Fixed Version | Link |\n| --- | --- | --- | --- |\n|HIGH|picomatch|4.0.4, 3.0.2, 2.3.2|[CVE-2026-33671](https://avd.aquasec.com/nvd/cve-2026-33671)|\n\nPicomatch is a glob matcher written JavaScript. Versions prior to 4.0.4, 3.0.2, and 2.3.2 are vulnerable to Regular Expression Denial of Service (ReDoS) when processing crafted extglob patterns. Certain patterns using extglob quantifiers such as `+()` and `*()`, especially when combined with overlapping alternatives or nested extglobs, are compiled into regular expressions that can exhibit catastrophic backtracking on non-matching input. Applications are impacted when they allow untrusted users to supply glob patterns that are passed to `picomatch` for compilation or matching. In those cases, an attacker can cause excessive CPU consumption and block the Node.js event loop, resulting in a denial of service. Applications that only use trusted, developer-controlled glob patterns are much less likely to be exposed in a security-relevant way. This issue is fixed in picomatch 4.0.4, 3.0.2 and 2.3.2. Users should upgrade to one of these versions or later, depending on their supported release line. If upgrading is not immediately possible, avoid passing untrusted glob patterns to `picomatch`. Possible mitigations include disabling extglob support for untrusted patterns by using `noextglob: true`, rejecting or sanitizing patterns containing nested extglobs or extglob quantifiers such as `+()` and `*()`, enforcing strict allowlists for accepted pattern syntax, running matching in an isolated worker or separate process with time and resource limits, and applying application-level request throttling and input validation for any endpoint that accepts glob patterns."
+              },
+              "properties": {
+                "cvssv3_baseScore": 7.5,
+                "cvssv3_vector": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:H",
+                "precision": "very-high",
+                "security-severity": "7.5",
+                "tags": [
+                  "vulnerability",
+                  "security",
+                  "HIGH"
+                ]
+              }
+            },
+            {
+              "id": "CVE-2026-33672",
+              "name": "LanguageSpecificPackageVulnerability",
+              "shortDescription": {
+                "text": "picomatch: Picomatch: Data integrity compromised via method injection with crafted POSIX bracket expressions"
+              },
+              "fullDescription": {
+                "text": "Picomatch is a glob matcher written JavaScript. Versions prior to 4.0.4, 3.0.2, and 2.3.2 are vulnerable to a method injection vulnerability affecting the `POSIX_REGEX_SOURCE` object. Because the object inherits from `Object.prototype`, specially crafted POSIX bracket expressions (e.g., `[[:constructor:]]`) can reference inherited method names. These methods are implicitly converted to strings and injected into the generated regular expression. This leads to incorrect glob matching behavior (integrity impact), where patterns may match unintended filenames. The issue does not enable remote code execution, but it can cause security-relevant logic errors in applications that rely on glob matching for filtering, validation, or access control. All users of affected `picomatch` versions that process untrusted or user-controlled glob patterns are potentially impacted. This issue is fixed in picomatch 4.0.4, 3.0.2 and 2.3.2. Users should upgrade to one of these versions or later, depending on their supported release line. If upgrading is not immediately possible, avoid passing untrusted glob patterns to picomatch. Possible mitigations include sanitizing or rejecting untrusted glob patterns, especially those containing POSIX character classes like `[[:...:]]`; avoiding the use of POSIX bracket expressions if user input is involved; and manually patching the library by modifying `POSIX_REGEX_SOURCE` to use a null prototype."
+              },
+              "defaultConfiguration": {
+                "level": "warning"
+              },
+              "helpUri": "https://avd.aquasec.com/nvd/cve-2026-33672",
+              "help": {
+                "text": "Vulnerability CVE-2026-33672\nSeverity: MEDIUM\nPackage: picomatch\nFixed Version: 4.0.4, 3.0.2, 2.3.2\nLink: [CVE-2026-33672](https://avd.aquasec.com/nvd/cve-2026-33672)\nPicomatch is a glob matcher written JavaScript. Versions prior to 4.0.4, 3.0.2, and 2.3.2 are vulnerable to a method injection vulnerability affecting the `POSIX_REGEX_SOURCE` object. Because the object inherits from `Object.prototype`, specially crafted POSIX bracket expressions (e.g., `[[:constructor:]]`) can reference inherited method names. These methods are implicitly converted to strings and injected into the generated regular expression. This leads to incorrect glob matching behavior (integrity impact), where patterns may match unintended filenames. The issue does not enable remote code execution, but it can cause security-relevant logic errors in applications that rely on glob matching for filtering, validation, or access control. All users of affected `picomatch` versions that process untrusted or user-controlled glob patterns are potentially impacted. This issue is fixed in picomatch 4.0.4, 3.0.2 and 2.3.2. Users should upgrade to one of these versions or later, depending on their supported release line. If upgrading is not immediately possible, avoid passing untrusted glob patterns to picomatch. Possible mitigations include sanitizing or rejecting untrusted glob patterns, especially those containing POSIX character classes like `[[:...:]]`; avoiding the use of POSIX bracket expressions if user input is involved; and manually patching the library by modifying `POSIX_REGEX_SOURCE` to use a null prototype.",
+                "markdown": "**Vulnerability CVE-2026-33672**\n| Severity | Package | Fixed Version | Link |\n| --- | --- | --- | --- |\n|MEDIUM|picomatch|4.0.4, 3.0.2, 2.3.2|[CVE-2026-33672](https://avd.aquasec.com/nvd/cve-2026-33672)|\n\nPicomatch is a glob matcher written JavaScript. Versions prior to 4.0.4, 3.0.2, and 2.3.2 are vulnerable to a method injection vulnerability affecting the `POSIX_REGEX_SOURCE` object. Because the object inherits from `Object.prototype`, specially crafted POSIX bracket expressions (e.g., `[[:constructor:]]`) can reference inherited method names. These methods are implicitly converted to strings and injected into the generated regular expression. This leads to incorrect glob matching behavior (integrity impact), where patterns may match unintended filenames. The issue does not enable remote code execution, but it can cause security-relevant logic errors in applications that rely on glob matching for filtering, validation, or access control. All users of affected `picomatch` versions that process untrusted or user-controlled glob patterns are potentially impacted. This issue is fixed in picomatch 4.0.4, 3.0.2 and 2.3.2. Users should upgrade to one of these versions or later, depending on their supported release line. If upgrading is not immediately possible, avoid passing untrusted glob patterns to picomatch. Possible mitigations include sanitizing or rejecting untrusted glob patterns, especially those containing POSIX character classes like `[[:...:]]`; avoiding the use of POSIX bracket expressions if user input is involved; and manually patching the library by modifying `POSIX_REGEX_SOURCE` to use a null prototype."
+              },
+              "properties": {
+                "cvssv3_baseScore": 5.3,
+                "cvssv3_vector": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:L/A:N",
+                "precision": "very-high",
+                "security-severity": "5.3",
+                "tags": [
+                  "vulnerability",
+                  "security",
+                  "MEDIUM"
+                ]
+              }
+            },
+            {
+              "id": "CVE-2026-48815",
+              "name": "LanguageSpecificPackageVulnerability",
+              "shortDescription": {
+                "text": "sigstore: Sigstore: Unauthorized certificates accepted due to ignored `certificateOIDs` verification option"
+              },
+              "fullDescription": {
+                "text": "sigstore-js provides JavaScript libraries for interacting with Sigstore services. Prior to 4.1.1, the documented certificateOIDs option in sigstore.verify() is accepted by the public API but discarded before verification, so required certificate extension OIDs are never checked and applications relying on certificateOIDs to restrict which certificates may sign artifacts can accept unauthorized certificates. This issue is fixed in version 4.1.1."
+              },
+              "defaultConfiguration": {
+                "level": "error"
+              },
+              "helpUri": "https://avd.aquasec.com/nvd/cve-2026-48815",
+              "help": {
+                "text": "Vulnerability CVE-2026-48815\nSeverity: HIGH\nPackage: sigstore\nFixed Version: 4.1.1\nLink: [CVE-2026-48815](https://avd.aquasec.com/nvd/cve-2026-48815)\nsigstore-js provides JavaScript libraries for interacting with Sigstore services. Prior to 4.1.1, the documented certificateOIDs option in sigstore.verify() is accepted by the public API but discarded before verification, so required certificate extension OIDs are never checked and applications relying on certificateOIDs to restrict which certificates may sign artifacts can accept unauthorized certificates. This issue is fixed in version 4.1.1.",
+                "markdown": "**Vulnerability CVE-2026-48815**\n| Severity | Package | Fixed Version | Link |\n| --- | --- | --- | --- |\n|HIGH|sigstore|4.1.1|[CVE-2026-48815](https://avd.aquasec.com/nvd/cve-2026-48815)|\n\nsigstore-js provides JavaScript libraries for interacting with Sigstore services. Prior to 4.1.1, the documented certificateOIDs option in sigstore.verify() is accepted by the public API but discarded before verification, so required certificate extension OIDs are never checked and applications relying on certificateOIDs to restrict which certificates may sign artifacts can accept unauthorized certificates. This issue is fixed in version 4.1.1."
+              },
+              "properties": {
+                "cvssv3_baseScore": 7.5,
+                "cvssv3_vector": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:H/A:N",
+                "precision": "very-high",
+                "security-severity": "7.5",
+                "tags": [
+                  "vulnerability",
+                  "security",
+                  "HIGH"
+                ]
+              }
+            },
+            {
+              "id": "CVE-2026-59873",
+              "name": "LanguageSpecificPackageVulnerability",
+              "shortDescription": {
+                "text": "tar: node-tar: Denial of Service via crafted gzip bomb"
+              },
+              "fullDescription": {
+                "text": "node-tar is a tar archive manipulation library for Node.js. Prior to 7.5.19, node-tar does not enforce hard upper bounds on total decompressed data, entry counts, or decompression ratio in extraction and parsing paths such as src/extract.ts, allowing a small crafted gzip bomb to exhaust disk space and CPU. This issue is fixed in version 7.5.19."
+              },
+              "defaultConfiguration": {
+                "level": "error"
+              },
+              "helpUri": "https://avd.aquasec.com/nvd/cve-2026-59873",
+              "help": {
+                "text": "Vulnerability CVE-2026-59873\nSeverity: CRITICAL\nPackage: tar\nFixed Version: 7.5.19\nLink: [CVE-2026-59873](https://avd.aquasec.com/nvd/cve-2026-59873)\nnode-tar is a tar archive manipulation library for Node.js. Prior to 7.5.19, node-tar does not enforce hard upper bounds on total decompressed data, entry counts, or decompression ratio in extraction and parsing paths such as src/extract.ts, allowing a small crafted gzip bomb to exhaust disk space and CPU. This issue is fixed in version 7.5.19.",
+                "markdown": "**Vulnerability CVE-2026-59873**\n| Severity | Package | Fixed Version | Link |\n| --- | --- | --- | --- |\n|CRITICAL|tar|7.5.19|[CVE-2026-59873](https://avd.aquasec.com/nvd/cve-2026-59873)|\n\nnode-tar is a tar archive manipulation library for Node.js. Prior to 7.5.19, node-tar does not enforce hard upper bounds on total decompressed data, entry counts, or decompression ratio in extraction and parsing paths such as src/extract.ts, allowing a small crafted gzip bomb to exhaust disk space and CPU. This issue is fixed in version 7.5.19."
+              },
+              "properties": {
+                "cvssv3_baseScore": 7.5,
+                "cvssv3_vector": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:H",
+                "cvssv40_baseScore": 9.2,
+                "cvssv40_vector": "CVSS:4.0/AV:N/AC:L/AT:N/PR:N/UI:N/VC:N/VI:N/VA:H/SC:N/SI:N/SA:H",
+                "precision": "very-high",
+                "security-severity": "7.5",
+                "tags": [
+                  "vulnerability",
+                  "security",
+                  "CRITICAL"
+                ]
+              }
+            },
+            {
+              "id": "CVE-2026-59874",
+              "name": "LanguageSpecificPackageVulnerability",
+              "shortDescription": {
+                "text": "tar: Node-tar: Denial of Service via malformed tar archive header"
+              },
+              "fullDescription": {
+                "text": "node-tar is a tar archive manipulation library for Node.js. Prior to 7.5.18, tar.replace accepts a checksum-valid tar header with a negative base-256 encoded entry size, causing the archive scanner to make no progress while repeatedly parsing the same header. This issue is fixed in version 7.5.18."
+              },
+              "defaultConfiguration": {
+                "level": "error"
+              },
+              "helpUri": "https://avd.aquasec.com/nvd/cve-2026-59874",
+              "help": {
+                "text": "Vulnerability CVE-2026-59874\nSeverity: HIGH\nPackage: tar\nFixed Version: 7.5.18\nLink: [CVE-2026-59874](https://avd.aquasec.com/nvd/cve-2026-59874)\nnode-tar is a tar archive manipulation library for Node.js. Prior to 7.5.18, tar.replace accepts a checksum-valid tar header with a negative base-256 encoded entry size, causing the archive scanner to make no progress while repeatedly parsing the same header. This issue is fixed in version 7.5.18.",
+                "markdown": "**Vulnerability CVE-2026-59874**\n| Severity | Package | Fixed Version | Link |\n| --- | --- | --- | --- |\n|HIGH|tar|7.5.18|[CVE-2026-59874](https://avd.aquasec.com/nvd/cve-2026-59874)|\n\nnode-tar is a tar archive manipulation library for Node.js. Prior to 7.5.18, tar.replace accepts a checksum-valid tar header with a negative base-256 encoded entry size, causing the archive scanner to make no progress while repeatedly parsing the same header. This issue is fixed in version 7.5.18."
+              },
+              "properties": {
+                "cvssv3_baseScore": 7.5,
+                "cvssv3_vector": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:H",
+                "cvssv40_baseScore": 8.7,
+                "cvssv40_vector": "CVSS:4.0/AV:N/AC:L/AT:N/PR:N/UI:N/VC:N/VI:N/VA:H/SC:N/SI:N/SA:N",
+                "precision": "very-high",
+                "security-severity": "7.5",
+                "tags": [
+                  "vulnerability",
+                  "security",
+                  "HIGH"
+                ]
+              }
+            },
+            {
+              "id": "CVE-2026-53655",
+              "name": "LanguageSpecificPackageVulnerability",
+              "shortDescription": {
+                "text": "node-tar: node-tar: File smuggling due to inconsistent tar archive parsing"
+              },
+              "fullDescription": {
+                "text": "node-tar is a full-featured Tar for Node.js. Prior to 7.5.16, tar (node-tar) applies a PAX extended header's size= record (and other PAX overrides) to the next header entry of any type, including intermediary metadata headers such as a GNU long-name (L) or long-link (K) entry. Per POSIX pax, a PAX extended header (x) describes the next file entry, not the intermediary extension headers that may sit between the x header and the file it annotates. Because node-tar lets the PAX size override the byte length of an intervening L/K/x header, an attacker can desynchronize node-tar's stream cursor relative to every other mainstream tar implementation (GNU tar, libarchive/bsdtar, Python tarfile, and the now-fixed tar-rs / astral-tokio-tar). The result is a tar parser interpretation differential (CWE-436): a single crafted archive yields a different set of members under node-tar than under the reference tar tools. An attacker can use this to hide a member from one parser while it is visible to another, which defeats security tooling whose scanner and extractor disagree on archive contents (e.g. a malware/secret scanner that lists entries with one library while a downstream step extracts with another) This vulnerability is fixed in 7.5.16."
+              },
+              "defaultConfiguration": {
+                "level": "warning"
+              },
+              "helpUri": "https://avd.aquasec.com/nvd/cve-2026-53655",
+              "help": {
+                "text": "Vulnerability CVE-2026-53655\nSeverity: MEDIUM\nPackage: tar\nFixed Version: 7.5.16\nLink: [CVE-2026-53655](https://avd.aquasec.com/nvd/cve-2026-53655)\nnode-tar is a full-featured Tar for Node.js. Prior to 7.5.16, tar (node-tar) applies a PAX extended header's size= record (and other PAX overrides) to the next header entry of any type, including intermediary metadata headers such as a GNU long-name (L) or long-link (K) entry. Per POSIX pax, a PAX extended header (x) describes the next file entry, not the intermediary extension headers that may sit between the x header and the file it annotates. Because node-tar lets the PAX size override the byte length of an intervening L/K/x header, an attacker can desynchronize node-tar's stream cursor relative to every other mainstream tar implementation (GNU tar, libarchive/bsdtar, Python tarfile, and the now-fixed tar-rs / astral-tokio-tar). The result is a tar parser interpretation differential (CWE-436): a single crafted archive yields a different set of members under node-tar than under the reference tar tools. An attacker can use this to hide a member from one parser while it is visible to another, which defeats security tooling whose scanner and extractor disagree on archive contents (e.g. a malware/secret scanner that lists entries with one library while a downstream step extracts with another) This vulnerability is fixed in 7.5.16.",
+                "markdown": "**Vulnerability CVE-2026-53655**\n| Severity | Package | Fixed Version | Link |\n| --- | --- | --- | --- |\n|MEDIUM|tar|7.5.16|[CVE-2026-53655](https://avd.aquasec.com/nvd/cve-2026-53655)|\n\nnode-tar is a full-featured Tar for Node.js. Prior to 7.5.16, tar (node-tar) applies a PAX extended header's size= record (and other PAX overrides) to the next header entry of any type, including intermediary metadata headers such as a GNU long-name (L) or long-link (K) entry. Per POSIX pax, a PAX extended header (x) describes the next file entry, not the intermediary extension headers that may sit between the x header and the file it annotates. Because node-tar lets the PAX size override the byte length of an intervening L/K/x header, an attacker can desynchronize node-tar's stream cursor relative to every other mainstream tar implementation (GNU tar, libarchive/bsdtar, Python tarfile, and the now-fixed tar-rs / astral-tokio-tar). The result is a tar parser interpretation differential (CWE-436): a single crafted archive yields a different set of members under node-tar than under the reference tar tools. An attacker can use this to hide a member from one parser while it is visible to another, which defeats security tooling whose scanner and extractor disagree on archive contents (e.g. a malware/secret scanner that lists entries with one library while a downstream step extracts with another) This vulnerability is fixed in 7.5.16."
+              },
+              "properties": {
+                "cvssv40_baseScore": 6.9,
+                "cvssv40_vector": "CVSS:4.0/AV:L/AC:L/AT:N/PR:N/UI:N/VC:N/VI:H/VA:N/SC:N/SI:N/SA:N",
+                "precision": "very-high",
+                "security-severity": "5.5",
+                "tags": [
+                  "vulnerability",
+                  "security",
+                  "MEDIUM"
+                ]
+              }
+            },
+            {
+              "id": "CVE-2026-59871",
+              "name": "LanguageSpecificPackageVulnerability",
+              "shortDescription": {
+                "text": "node-tar: node-tar: Denial of Service due to incorrect PAX path handling"
+              },
+              "fullDescription": {
+                "text": "node-tar is a tar archive manipulation library for Node.js. Prior to 7.5.18, node-tar coerces all-digit PAX path and linkpath values in src/pax.ts to JavaScript numbers, causing downstream path handling such as normalizeWindowsPath(entry.path).split('/') to throw an uncaught TypeError. This issue is fixed in version 7.5.18."
+              },
+              "defaultConfiguration": {
+                "level": "warning"
+              },
+              "helpUri": "https://avd.aquasec.com/nvd/cve-2026-59871",
+              "help": {
+                "text": "Vulnerability CVE-2026-59871\nSeverity: MEDIUM\nPackage: tar\nFixed Version: 7.5.18\nLink: [CVE-2026-59871](https://avd.aquasec.com/nvd/cve-2026-59871)\nnode-tar is a tar archive manipulation library for Node.js. Prior to 7.5.18, node-tar coerces all-digit PAX path and linkpath values in src/pax.ts to JavaScript numbers, causing downstream path handling such as normalizeWindowsPath(entry.path).split('/') to throw an uncaught TypeError. This issue is fixed in version 7.5.18.",
+                "markdown": "**Vulnerability CVE-2026-59871**\n| Severity | Package | Fixed Version | Link |\n| --- | --- | --- | --- |\n|MEDIUM|tar|7.5.18|[CVE-2026-59871](https://avd.aquasec.com/nvd/cve-2026-59871)|\n\nnode-tar is a tar archive manipulation library for Node.js. Prior to 7.5.18, node-tar coerces all-digit PAX path and linkpath values in src/pax.ts to JavaScript numbers, causing downstream path handling such as normalizeWindowsPath(entry.path).split('/') to throw an uncaught TypeError. This issue is fixed in version 7.5.18."
+              },
+              "properties": {
+                "cvssv3_baseScore": 5.3,
+                "cvssv3_vector": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:L",
+                "precision": "very-high",
+                "security-severity": "5.3",
+                "tags": [
+                  "vulnerability",
+                  "security",
+                  "MEDIUM"
+                ]
+              }
+            },
+            {
+              "id": "CVE-2026-59875",
+              "name": "LanguageSpecificPackageVulnerability",
+              "shortDescription": {
+                "text": "node-tar: node-tar: Denial of Service via crafted archive with NUL bytes in metadata"
+              },
+              "fullDescription": {
+                "text": "node-tar is a tar archive manipulation library for Node.js. Prior to 7.5.17, node-tar does not strip NUL bytes from PAX path and linkpath records in src/pax.ts, allowing a crafted archive with values to reach fs.lstat or fs.open and terminate the process with an uncaught exception. This issue is fixed in version 7.5.17."
+              },
+              "defaultConfiguration": {
+                "level": "warning"
+              },
+              "helpUri": "https://avd.aquasec.com/nvd/cve-2026-59875",
+              "help": {
+                "text": "Vulnerability CVE-2026-59875\nSeverity: MEDIUM\nPackage: tar\nFixed Version: 7.5.17\nLink: [CVE-2026-59875](https://avd.aquasec.com/nvd/cve-2026-59875)\nnode-tar is a tar archive manipulation library for Node.js. Prior to 7.5.17, node-tar does not strip NUL bytes from PAX path and linkpath records in src/pax.ts, allowing a crafted archive with values to reach fs.lstat or fs.open and terminate the process with an uncaught exception. This issue is fixed in version 7.5.17.",
+                "markdown": "**Vulnerability CVE-2026-59875**\n| Severity | Package | Fixed Version | Link |\n| --- | --- | --- | --- |\n|MEDIUM|tar|7.5.17|[CVE-2026-59875](https://avd.aquasec.com/nvd/cve-2026-59875)|\n\nnode-tar is a tar archive manipulation library for Node.js. Prior to 7.5.17, node-tar does not strip NUL bytes from PAX path and linkpath records in src/pax.ts, allowing a crafted archive with values to reach fs.lstat or fs.open and terminate the process with an uncaught exception. This issue is fixed in version 7.5.17."
+              },
+              "properties": {
+                "cvssv3_baseScore": 5.3,
+                "cvssv3_vector": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:L",
+                "precision": "very-high",
+                "security-severity": "5.3",
+                "tags": [
+                  "vulnerability",
+                  "security",
+                  "MEDIUM"
+                ]
+              }
+            },
+            {
+              "id": "GHSA-r292-9mhp-454m",
+              "name": "LanguageSpecificPackageVulnerability",
+              "shortDescription": {
+                "text": "node-tar: Uncontrolled recursion in mapHas/filesFilter allows uncatchable stack-overflow DoS via crafted long-path tar with member selection"
+              },
+              "fullDescription": {
+                "text": "## Summary\n`node-tar` (npm `tar`) contains an uncontrolled-recursion stack-exhaustion DoS in the internal `mapHas` helper used by `filesFilter`. When a consumer calls `tar.t(...)` or `tar.x(...)` with a non-empty member-selection list, node-tar installs a filter that closes over the recursive `mapHas` (`src/list.ts:33-44`). `mapHas` walks an entry path upward one `path.dirname()` call per recursion **with no segment cap**. A single crafted tar with a GNU-`L` (or PAX-`x`) long-path header can deliver a path of tens of thousands of `/`-separated segments (up to `maxMetaEntrySize` = 1 MiB). The recursion overflows the call stack, throwing an uncatchable `RangeError` that terminates the Node process on async/streaming consumers.\n\n## Root Cause\n`filesFilter` (`src/list.ts:27-51`) is installed whenever a caller passes a member-selection list (`src/list.ts:119-122`, `src/extract.ts:55-57`). Its filter is invoked at `src/parse.ts:253` (`entry.ignore = entry.ignore || !this.filter(entry.path, entry)`) inside `Parser[CONSUMEHEADER]` — and crucially **outside** the only try/catch in that method (which wraps `new Header` at `src/parse.ts:179-183`). `mapHas` recurses once per path segment with no depth limit. The `Unpack` `maxDepth` guard (`src/unpack.ts:342`, in `[CHECKPATH]`) only runs on the `'entry'` event, which fires *after* `CONSUMEHEADER` has already invoked the filter — so the stack overflows before any depth guard executes. `tar.t` (list) has no `maxDepth` at all.\n\n## Impact\nUnauthenticated, remotely-triggerable denial of service: a ~188-byte gzip (≈26 KB tar) crashes any service that lists or extracts *selected members* from an untrusted archive (package registries, CI artifact/cache restore, upload processors). On async (`await tar.t(...)`/`tar.x(...)`) and streaming/`pipe` consumers the `RangeError` escapes the promise as an `uncaughtException` and terminates the process — standard defensive `try/catch` around the async call does NOT prevent it. (The synchronous API is catchable; the async/stream paths — the dominant server pattern — are not.)\n\n## Proof of Concept\n```js\n// Build a tar whose single entry has a GNU-L long path of ~12,000 \"a/\" segments (~26 KB),\n// gzip it (≈188 bytes), then have a consumer list/extract with member selection:\nconst tar = require('tar');\nawait tar.t({ file: 'evil.tar.gz', gzip: true }, ['some-member']); // -\u003e RangeError, process exit\n```\nEmpirically reproduced on Node v24.18.0 against built `dist/commonjs` of node-tar 7.5.20: 188-byte gzip → 26,112-byte tar (12,000 segments) → uncaught `RangeError: Maximum call stack size exceeded` → process exit. A control run with no member-selection list (filter not installed) parses cleanly (exit 0), isolating `mapHas` as the sole cause.\n\n## Attack Chain\n1. **Entry.** Attacker crafts a tar with a GNU `L` (or PAX `x`) long-path header whose body is `\"a/\"`×~12000 (~26 KB), followed by a normal file entry.\n   - **Guard:** `maxMetaEntrySize` caps the meta body at 1 MiB (`src/parse.ts:241`).\n   - **Bypass proof:** 26 KB ≪ 1 MiB → accepted (verified: 26 KB archive parsed up to the filter).\n2. **Trigger.** Victim service calls `tar.t({file},[sel])` or `tar.x({file,cwd},[sel])` (member selection — a documented, common API).\n   - **Guard:** `Unpack.maxDepth` (default 1024) at `src/unpack.ts:342`; decompression-ratio guard.\n   - **Bypass proof:** `maxDepth` lives in `[CHECKPATH]` on the `'entry'` event, which fires *after* `CONSUMEHEADER`'s filter call — the crash occurs before it (extract exits 1 with default maxDepth). `tar.t` has no maxDepth. Ratio is ~139× (trivial); no total-bytes cap applies to the uncompressed meta body.\n3. **Sink.** `this.filter(entry.path)` → `mapHas` recurses once per `/` segment (`src/list.ts:39`).\n   - **Guard:** try/catch in `CONSUMEHEADER`.\n   - **Bypass proof:** the only try/catch wraps `new Header` (`src/parse.ts:179-183`); the `this.filter(...)` call at `src/parse.ts:253` is outside it. The `RangeError` propagates out of the stream write/`'data'` path → uncaught exception (verified: `process.on('uncaughtException')` fires; async `await`+`try/catch` does NOT intercept).\n4. **Impact.** Node process termination; a 188-byte gzip crashes any consumer that lists/extracts selected members from untrusted archives.\n\n## Bypass Evidence\n- `mapHas` recursion is member-name-independent: the crash fires even when the requested members do not match the malicious entry path — the attacker only needs the consumer to *use* member selection.\n- Standalone `mapHas` overflows at 20k–30k segments; on the real streaming path (atop `write → CONSUMECHUNK → CONSUMEHEADER → filter`) it crashes at ≤8k segments (finder's ~12k estimate is accurate for the reachable path).\n- Control (no member list → no filter) parses cleanly (exit 0), isolating `mapHas`.\n\n## Affected Versions\n`\u003c= 7.5.20` (npm `tar`). `mapHas` present verbatim on tag `v7.5.20` (latest GitHub release and npm `dist-tag latest`); no segment/depth cap in `src/list.ts` or the `CONSUMEHEADER` filter path; HEAD == 7.5.20, no unreleased fix.\n\n## Suggested Fix\nRewrite `mapHas` iteratively (walk `dirname` in a `while` loop with a segment/visited cap), or enforce a hard path-segment limit in `Header`/`Parser` independent of `maxMetaEntrySize`, applied before any per-entry filter runs.\n\n## Dedup Note\nDistinct from CVE-2024-28863 / GHSA-f5x3-32g6-qm9j \"lack of folders depth validation\" (that bounds `mkdir` recursion during *extraction* via `maxDepth` in `Unpack[CHECKPATH]` on the `'entry'` event — a different sink, code path, and fix; runs after the filter and does not apply to `tar.t`). Also distinct from the PAX NUL/numeric-path crash advisories (improper-input-to-fs / type confusion, not recursion) and the gzip-bomb advisory (resource exhaustion on disk writes). None touch `list.ts`/`filesFilter`/`mapHas` or require member selection.\n\n---\nReported by **zx (Jace)** — GitHub: @manus-use"
+              },
+              "defaultConfiguration": {
+                "level": "warning"
+              },
+              "helpUri": "https://github.com/advisories/GHSA-r292-9mhp-454m",
+              "help": {
+                "text": "Vulnerability GHSA-r292-9mhp-454m\nSeverity: MEDIUM\nPackage: tar\nFixed Version: 7.5.21\nLink: [GHSA-r292-9mhp-454m](https://github.com/advisories/GHSA-r292-9mhp-454m)\n## Summary\n`node-tar` (npm `tar`) contains an uncontrolled-recursion stack-exhaustion DoS in the internal `mapHas` helper used by `filesFilter`. When a consumer calls `tar.t(...)` or `tar.x(...)` with a non-empty member-selection list, node-tar installs a filter that closes over the recursive `mapHas` (`src/list.ts:33-44`). `mapHas` walks an entry path upward one `path.dirname()` call per recursion **with no segment cap**. A single crafted tar with a GNU-`L` (or PAX-`x`) long-path header can deliver a path of tens of thousands of `/`-separated segments (up to `maxMetaEntrySize` = 1 MiB). The recursion overflows the call stack, throwing an uncatchable `RangeError` that terminates the Node process on async/streaming consumers.\n\n## Root Cause\n`filesFilter` (`src/list.ts:27-51`) is installed whenever a caller passes a member-selection list (`src/list.ts:119-122`, `src/extract.ts:55-57`). Its filter is invoked at `src/parse.ts:253` (`entry.ignore = entry.ignore || !this.filter(entry.path, entry)`) inside `Parser[CONSUMEHEADER]` — and crucially **outside** the only try/catch in that method (which wraps `new Header` at `src/parse.ts:179-183`). `mapHas` recurses once per path segment with no depth limit. The `Unpack` `maxDepth` guard (`src/unpack.ts:342`, in `[CHECKPATH]`) only runs on the `'entry'` event, which fires *after* `CONSUMEHEADER` has already invoked the filter — so the stack overflows before any depth guard executes. `tar.t` (list) has no `maxDepth` at all.\n\n## Impact\nUnauthenticated, remotely-triggerable denial of service: a ~188-byte gzip (≈26 KB tar) crashes any service that lists or extracts *selected members* from an untrusted archive (package registries, CI artifact/cache restore, upload processors). On async (`await tar.t(...)`/`tar.x(...)`) and streaming/`pipe` consumers the `RangeError` escapes the promise as an `uncaughtException` and terminates the process — standard defensive `try/catch` around the async call does NOT prevent it. (The synchronous API is catchable; the async/stream paths — the dominant server pattern — are not.)\n\n## Proof of Concept\n```js\n// Build a tar whose single entry has a GNU-L long path of ~12,000 \"a/\" segments (~26 KB),\n// gzip it (≈188 bytes), then have a consumer list/extract with member selection:\nconst tar = require('tar');\nawait tar.t({ file: 'evil.tar.gz', gzip: true }, ['some-member']); // -\u003e RangeError, process exit\n```\nEmpirically reproduced on Node v24.18.0 against built `dist/commonjs` of node-tar 7.5.20: 188-byte gzip → 26,112-byte tar (12,000 segments) → uncaught `RangeError: Maximum call stack size exceeded` → process exit. A control run with no member-selection list (filter not installed) parses cleanly (exit 0), isolating `mapHas` as the sole cause.\n\n## Attack Chain\n1. **Entry.** Attacker crafts a tar with a GNU `L` (or PAX `x`) long-path header whose body is `\"a/\"`×~12000 (~26 KB), followed by a normal file entry.\n   - **Guard:** `maxMetaEntrySize` caps the meta body at 1 MiB (`src/parse.ts:241`).\n   - **Bypass proof:** 26 KB ≪ 1 MiB → accepted (verified: 26 KB archive parsed up to the filter).\n2. **Trigger.** Victim service calls `tar.t({file},[sel])` or `tar.x({file,cwd},[sel])` (member selection — a documented, common API).\n   - **Guard:** `Unpack.maxDepth` (default 1024) at `src/unpack.ts:342`; decompression-ratio guard.\n   - **Bypass proof:** `maxDepth` lives in `[CHECKPATH]` on the `'entry'` event, which fires *after* `CONSUMEHEADER`'s filter call — the crash occurs before it (extract exits 1 with default maxDepth). `tar.t` has no maxDepth. Ratio is ~139× (trivial); no total-bytes cap applies to the uncompressed meta body.\n3. **Sink.** `this.filter(entry.path)` → `mapHas` recurses once per `/` segment (`src/list.ts:39`).\n   - **Guard:** try/catch in `CONSUMEHEADER`.\n   - **Bypass proof:** the only try/catch wraps `new Header` (`src/parse.ts:179-183`); the `this.filter(...)` call at `src/parse.ts:253` is outside it. The `RangeError` propagates out of the stream write/`'data'` path → uncaught exception (verified: `process.on('uncaughtException')` fires; async `await`+`try/catch` does NOT intercept).\n4. **Impact.** Node process termination; a 188-byte gzip crashes any consumer that lists/extracts selected members from untrusted archives.\n\n## Bypass Evidence\n- `mapHas` recursion is member-name-independent: the crash fires even when the requested members do not match the malicious entry path — the attacker only needs the consumer to *use* member selection.\n- Standalone `mapHas` overflows at 20k–30k segments; on the real streaming path (atop `write → CONSUMECHUNK → CONSUMEHEADER → filter`) it crashes at ≤8k segments (finder's ~12k estimate is accurate for the reachable path).\n- Control (no member list → no filter) parses cleanly (exit 0), isolating `mapHas`.\n\n## Affected Versions\n`\u003c= 7.5.20` (npm `tar`). `mapHas` present verbatim on tag `v7.5.20` (latest GitHub release and npm `dist-tag latest`); no segment/depth cap in `src/list.ts` or the `CONSUMEHEADER` filter path; HEAD == 7.5.20, no unreleased fix.\n\n## Suggested Fix\nRewrite `mapHas` iteratively (walk `dirname` in a `while` loop with a segment/visited cap), or enforce a hard path-segment limit in `Header`/`Parser` independent of `maxMetaEntrySize`, applied before any per-entry filter runs.\n\n## Dedup Note\nDistinct from CVE-2024-28863 / GHSA-f5x3-32g6-qm9j \"lack of folders depth validation\" (that bounds `mkdir` recursion during *extraction* via `maxDepth` in `Unpack[CHECKPATH]` on the `'entry'` event — a different sink, code path, and fix; runs after the filter and does not apply to `tar.t`). Also distinct from the PAX NUL/numeric-path crash advisories (improper-input-to-fs / type confusion, not recursion) and the gzip-bomb advisory (resource exhaustion on disk writes). None touch `list.ts`/`filesFilter`/`mapHas` or require member selection.\n\n---\nReported by **zx (Jace)** — GitHub: @manus-use",
+                "markdown": "**Vulnerability GHSA-r292-9mhp-454m**\n| Severity | Package | Fixed Version | Link |\n| --- | --- | --- | --- |\n|MEDIUM|tar|7.5.21|[GHSA-r292-9mhp-454m](https://github.com/advisories/GHSA-r292-9mhp-454m)|\n\n## Summary\n`node-tar` (npm `tar`) contains an uncontrolled-recursion stack-exhaustion DoS in the internal `mapHas` helper used by `filesFilter`. When a consumer calls `tar.t(...)` or `tar.x(...)` with a non-empty member-selection list, node-tar installs a filter that closes over the recursive `mapHas` (`src/list.ts:33-44`). `mapHas` walks an entry path upward one `path.dirname()` call per recursion **with no segment cap**. A single crafted tar with a GNU-`L` (or PAX-`x`) long-path header can deliver a path of tens of thousands of `/`-separated segments (up to `maxMetaEntrySize` = 1 MiB). The recursion overflows the call stack, throwing an uncatchable `RangeError` that terminates the Node process on async/streaming consumers.\n\n## Root Cause\n`filesFilter` (`src/list.ts:27-51`) is installed whenever a caller passes a member-selection list (`src/list.ts:119-122`, `src/extract.ts:55-57`). Its filter is invoked at `src/parse.ts:253` (`entry.ignore = entry.ignore || !this.filter(entry.path, entry)`) inside `Parser[CONSUMEHEADER]` — and crucially **outside** the only try/catch in that method (which wraps `new Header` at `src/parse.ts:179-183`). `mapHas` recurses once per path segment with no depth limit. The `Unpack` `maxDepth` guard (`src/unpack.ts:342`, in `[CHECKPATH]`) only runs on the `'entry'` event, which fires *after* `CONSUMEHEADER` has already invoked the filter — so the stack overflows before any depth guard executes. `tar.t` (list) has no `maxDepth` at all.\n\n## Impact\nUnauthenticated, remotely-triggerable denial of service: a ~188-byte gzip (≈26 KB tar) crashes any service that lists or extracts *selected members* from an untrusted archive (package registries, CI artifact/cache restore, upload processors). On async (`await tar.t(...)`/`tar.x(...)`) and streaming/`pipe` consumers the `RangeError` escapes the promise as an `uncaughtException` and terminates the process — standard defensive `try/catch` around the async call does NOT prevent it. (The synchronous API is catchable; the async/stream paths — the dominant server pattern — are not.)\n\n## Proof of Concept\n```js\n// Build a tar whose single entry has a GNU-L long path of ~12,000 \"a/\" segments (~26 KB),\n// gzip it (≈188 bytes), then have a consumer list/extract with member selection:\nconst tar = require('tar');\nawait tar.t({ file: 'evil.tar.gz', gzip: true }, ['some-member']); // -\u003e RangeError, process exit\n```\nEmpirically reproduced on Node v24.18.0 against built `dist/commonjs` of node-tar 7.5.20: 188-byte gzip → 26,112-byte tar (12,000 segments) → uncaught `RangeError: Maximum call stack size exceeded` → process exit. A control run with no member-selection list (filter not installed) parses cleanly (exit 0), isolating `mapHas` as the sole cause.\n\n## Attack Chain\n1. **Entry.** Attacker crafts a tar with a GNU `L` (or PAX `x`) long-path header whose body is `\"a/\"`×~12000 (~26 KB), followed by a normal file entry.\n   - **Guard:** `maxMetaEntrySize` caps the meta body at 1 MiB (`src/parse.ts:241`).\n   - **Bypass proof:** 26 KB ≪ 1 MiB → accepted (verified: 26 KB archive parsed up to the filter).\n2. **Trigger.** Victim service calls `tar.t({file},[sel])` or `tar.x({file,cwd},[sel])` (member selection — a documented, common API).\n   - **Guard:** `Unpack.maxDepth` (default 1024) at `src/unpack.ts:342`; decompression-ratio guard.\n   - **Bypass proof:** `maxDepth` lives in `[CHECKPATH]` on the `'entry'` event, which fires *after* `CONSUMEHEADER`'s filter call — the crash occurs before it (extract exits 1 with default maxDepth). `tar.t` has no maxDepth. Ratio is ~139× (trivial); no total-bytes cap applies to the uncompressed meta body.\n3. **Sink.** `this.filter(entry.path)` → `mapHas` recurses once per `/` segment (`src/list.ts:39`).\n   - **Guard:** try/catch in `CONSUMEHEADER`.\n   - **Bypass proof:** the only try/catch wraps `new Header` (`src/parse.ts:179-183`); the `this.filter(...)` call at `src/parse.ts:253` is outside it. The `RangeError` propagates out of the stream write/`'data'` path → uncaught exception (verified: `process.on('uncaughtException')` fires; async `await`+`try/catch` does NOT intercept).\n4. **Impact.** Node process termination; a 188-byte gzip crashes any consumer that lists/extracts selected members from untrusted archives.\n\n## Bypass Evidence\n- `mapHas` recursion is member-name-independent: the crash fires even when the requested members do not match the malicious entry path — the attacker only needs the consumer to *use* member selection.\n- Standalone `mapHas` overflows at 20k–30k segments; on the real streaming path (atop `write → CONSUMECHUNK → CONSUMEHEADER → filter`) it crashes at ≤8k segments (finder's ~12k estimate is accurate for the reachable path).\n- Control (no member list → no filter) parses cleanly (exit 0), isolating `mapHas`.\n\n## Affected Versions\n`\u003c= 7.5.20` (npm `tar`). `mapHas` present verbatim on tag `v7.5.20` (latest GitHub release and npm `dist-tag latest`); no segment/depth cap in `src/list.ts` or the `CONSUMEHEADER` filter path; HEAD == 7.5.20, no unreleased fix.\n\n## Suggested Fix\nRewrite `mapHas` iteratively (walk `dirname` in a `while` loop with a segment/visited cap), or enforce a hard path-segment limit in `Header`/`Parser` independent of `maxMetaEntrySize`, applied before any per-entry filter runs.\n\n## Dedup Note\nDistinct from CVE-2024-28863 / GHSA-f5x3-32g6-qm9j \"lack of folders depth validation\" (that bounds `mkdir` recursion during *extraction* via `maxDepth` in `Unpack[CHECKPATH]` on the `'entry'` event — a different sink, code path, and fix; runs after the filter and does not apply to `tar.t`). Also distinct from the PAX NUL/numeric-path crash advisories (improper-input-to-fs / type confusion, not recursion) and the gzip-bomb advisory (resource exhaustion on disk writes). None touch `list.ts`/`filesFilter`/`mapHas` or require member selection.\n\n---\nReported by **zx (Jace)** — GitHub: @manus-use"
+              },
+              "properties": {
+                "cvssv3_baseScore": 5.3,
+                "cvssv3_vector": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:L",
+                "precision": "very-high",
+                "security-severity": "5.3",
+                "tags": [
+                  "vulnerability",
+                  "security",
+                  "MEDIUM"
+                ]
+              }
+            }
+          ],
+          "version": "0.70.0"
+        }
+      },
+      "results": [
+        {
+          "ruleId": "CVE-2026-48758",
+          "ruleIndex": 0,
+          "level": "warning",
+          "message": {
+            "text": "Package: @sigstore/core\nInstalled Version: 2.0.0\nVulnerability CVE-2026-48758\nSeverity: MEDIUM\nFixed Version: 3.2.1\nLink: [CVE-2026-48758](https://avd.aquasec.com/nvd/cve-2026-48758)"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "usr/local/lib/node_modules/npm/node_modules/@sigstore/core/package.json",
+                  "uriBaseId": "ROOTPATH"
+                },
+                "region": {
+                  "startLine": 1,
+                  "startColumn": 1,
+                  "endLine": 1,
+                  "endColumn": 1
+                }
+              },
+              "message": {
+                "text": "usr/local/lib/node_modules/npm/node_modules/@sigstore/core/package.json: @sigstore/core@2.0.0"
+              }
+            }
+          ]
+        },
+        {
+          "ruleId": "CVE-2026-13149",
+          "ruleIndex": 1,
+          "level": "error",
+          "message": {
+            "text": "Package: brace-expansion\nInstalled Version: 2.0.2\nVulnerability CVE-2026-13149\nSeverity: HIGH\nFixed Version: 5.0.7, 1.1.16, 2.1.2\nLink: [CVE-2026-13149](https://avd.aquasec.com/nvd/cve-2026-13149)"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "usr/local/lib/node_modules/npm/node_modules/brace-expansion/package.json",
+                  "uriBaseId": "ROOTPATH"
+                },
+                "region": {
+                  "startLine": 1,
+                  "startColumn": 1,
+                  "endLine": 1,
+                  "endColumn": 1
+                }
+              },
+              "message": {
+                "text": "usr/local/lib/node_modules/npm/node_modules/brace-expansion/package.json: brace-expansion@2.0.2"
+              }
+            }
+          ]
+        },
+        {
+          "ruleId": "CVE-2026-14257",
+          "ruleIndex": 2,
+          "level": "error",
+          "message": {
+            "text": "Package: brace-expansion\nInstalled Version: 2.0.2\nVulnerability CVE-2026-14257\nSeverity: HIGH\nFixed Version: 5.0.8, 3.0.3, 2.1.3, 1.1.17\nLink: [CVE-2026-14257](https://avd.aquasec.com/nvd/cve-2026-14257)"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "usr/local/lib/node_modules/npm/node_modules/brace-expansion/package.json",
+                  "uriBaseId": "ROOTPATH"
+                },
+                "region": {
+                  "startLine": 1,
+                  "startColumn": 1,
+                  "endLine": 1,
+                  "endColumn": 1
+                }
+              },
+              "message": {
+                "text": "usr/local/lib/node_modules/npm/node_modules/brace-expansion/package.json: brace-expansion@2.0.2"
+              }
+            }
+          ]
+        },
+        {
+          "ruleId": "CVE-2026-33750",
+          "ruleIndex": 3,
+          "level": "warning",
+          "message": {
+            "text": "Package: brace-expansion\nInstalled Version: 2.0.2\nVulnerability CVE-2026-33750\nSeverity: MEDIUM\nFixed Version: 5.0.5, 3.0.2, 2.0.3, 1.1.13\nLink: [CVE-2026-33750](https://avd.aquasec.com/nvd/cve-2026-33750)"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "usr/local/lib/node_modules/npm/node_modules/brace-expansion/package.json",
+                  "uriBaseId": "ROOTPATH"
+                },
+                "region": {
+                  "startLine": 1,
+                  "startColumn": 1,
+                  "endLine": 1,
+                  "endColumn": 1
+                }
+              },
+              "message": {
+                "text": "usr/local/lib/node_modules/npm/node_modules/brace-expansion/package.json: brace-expansion@2.0.2"
+              }
+            }
+          ]
+        },
+        {
+          "ruleId": "CVE-2026-42338",
+          "ruleIndex": 4,
+          "level": "warning",
+          "message": {
+            "text": "Package: ip-address\nInstalled Version: 10.1.0\nVulnerability CVE-2026-42338\nSeverity: MEDIUM\nFixed Version: 10.1.1\nLink: [CVE-2026-42338](https://avd.aquasec.com/nvd/cve-2026-42338)"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "usr/local/lib/node_modules/npm/node_modules/ip-address/package.json",
+                  "uriBaseId": "ROOTPATH"
+                },
+                "region": {
+                  "startLine": 1,
+                  "startColumn": 1,
+                  "endLine": 1,
+                  "endColumn": 1
+                }
+              },
+              "message": {
+                "text": "usr/local/lib/node_modules/npm/node_modules/ip-address/package.json: ip-address@10.1.0"
+              }
+            }
+          ]
+        },
+        {
+          "ruleId": "CVE-2026-33671",
+          "ruleIndex": 5,
+          "level": "error",
+          "message": {
+            "text": "Package: picomatch\nInstalled Version: 4.0.3\nVulnerability CVE-2026-33671\nSeverity: HIGH\nFixed Version: 4.0.4, 3.0.2, 2.3.2\nLink: [CVE-2026-33671](https://avd.aquasec.com/nvd/cve-2026-33671)"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "usr/local/lib/node_modules/npm/node_modules/picomatch/package.json",
+                  "uriBaseId": "ROOTPATH"
+                },
+                "region": {
+                  "startLine": 1,
+                  "startColumn": 1,
+                  "endLine": 1,
+                  "endColumn": 1
+                }
+              },
+              "message": {
+                "text": "usr/local/lib/node_modules/npm/node_modules/picomatch/package.json: picomatch@4.0.3"
+              }
+            }
+          ]
+        },
+        {
+          "ruleId": "CVE-2026-33672",
+          "ruleIndex": 6,
+          "level": "warning",
+          "message": {
+            "text": "Package: picomatch\nInstalled Version: 4.0.3\nVulnerability CVE-2026-33672\nSeverity: MEDIUM\nFixed Version: 4.0.4, 3.0.2, 2.3.2\nLink: [CVE-2026-33672](https://avd.aquasec.com/nvd/cve-2026-33672)"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "usr/local/lib/node_modules/npm/node_modules/picomatch/package.json",
+                  "uriBaseId": "ROOTPATH"
+                },
+                "region": {
+                  "startLine": 1,
+                  "startColumn": 1,
+                  "endLine": 1,
+                  "endColumn": 1
+                }
+              },
+              "message": {
+                "text": "usr/local/lib/node_modules/npm/node_modules/picomatch/package.json: picomatch@4.0.3"
+              }
+            }
+          ]
+        },
+        {
+          "ruleId": "CVE-2026-48815",
+          "ruleIndex": 7,
+          "level": "error",
+          "message": {
+            "text": "Package: sigstore\nInstalled Version: 3.1.0\nVulnerability CVE-2026-48815\nSeverity: HIGH\nFixed Version: 4.1.1\nLink: [CVE-2026-48815](https://avd.aquasec.com/nvd/cve-2026-48815)"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "usr/local/lib/node_modules/npm/node_modules/sigstore/package.json",
+                  "uriBaseId": "ROOTPATH"
+                },
+                "region": {
+                  "startLine": 1,
+                  "startColumn": 1,
+                  "endLine": 1,
+                  "endColumn": 1
+                }
+              },
+              "message": {
+                "text": "usr/local/lib/node_modules/npm/node_modules/sigstore/package.json: sigstore@3.1.0"
+              }
+            }
+          ]
+        },
+        {
+          "ruleId": "CVE-2026-59873",
+          "ruleIndex": 8,
+          "level": "error",
+          "message": {
+            "text": "Package: tar\nInstalled Version: 7.5.11\nVulnerability CVE-2026-59873\nSeverity: CRITICAL\nFixed Version: 7.5.19\nLink: [CVE-2026-59873](https://avd.aquasec.com/nvd/cve-2026-59873)"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "usr/local/lib/node_modules/npm/node_modules/tar/package.json",
+                  "uriBaseId": "ROOTPATH"
+                },
+                "region": {
+                  "startLine": 1,
+                  "startColumn": 1,
+                  "endLine": 1,
+                  "endColumn": 1
+                }
+              },
+              "message": {
+                "text": "usr/local/lib/node_modules/npm/node_modules/tar/package.json: tar@7.5.11"
+              }
+            }
+          ]
+        },
+        {
+          "ruleId": "CVE-2026-59874",
+          "ruleIndex": 9,
+          "level": "error",
+          "message": {
+            "text": "Package: tar\nInstalled Version: 7.5.11\nVulnerability CVE-2026-59874\nSeverity: HIGH\nFixed Version: 7.5.18\nLink: [CVE-2026-59874](https://avd.aquasec.com/nvd/cve-2026-59874)"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "usr/local/lib/node_modules/npm/node_modules/tar/package.json",
+                  "uriBaseId": "ROOTPATH"
+                },
+                "region": {
+                  "startLine": 1,
+                  "startColumn": 1,
+                  "endLine": 1,
+                  "endColumn": 1
+                }
+              },
+              "message": {
+                "text": "usr/local/lib/node_modules/npm/node_modules/tar/package.json: tar@7.5.11"
+              }
+            }
+          ]
+        },
+        {
+          "ruleId": "CVE-2026-53655",
+          "ruleIndex": 10,
+          "level": "warning",
+          "message": {
+            "text": "Package: tar\nInstalled Version: 7.5.11\nVulnerability CVE-2026-53655\nSeverity: MEDIUM\nFixed Version: 7.5.16\nLink: [CVE-2026-53655](https://avd.aquasec.com/nvd/cve-2026-53655)"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "usr/local/lib/node_modules/npm/node_modules/tar/package.json",
+                  "uriBaseId": "ROOTPATH"
+                },
+                "region": {
+                  "startLine": 1,
+                  "startColumn": 1,
+                  "endLine": 1,
+                  "endColumn": 1
+                }
+              },
+              "message": {
+                "text": "usr/local/lib/node_modules/npm/node_modules/tar/package.json: tar@7.5.11"
+              }
+            }
+          ]
+        },
+        {
+          "ruleId": "CVE-2026-59871",
+          "ruleIndex": 11,
+          "level": "warning",
+          "message": {
+            "text": "Package: tar\nInstalled Version: 7.5.11\nVulnerability CVE-2026-59871\nSeverity: MEDIUM\nFixed Version: 7.5.18\nLink: [CVE-2026-59871](https://avd.aquasec.com/nvd/cve-2026-59871)"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "usr/local/lib/node_modules/npm/node_modules/tar/package.json",
+                  "uriBaseId": "ROOTPATH"
+                },
+                "region": {
+                  "startLine": 1,
+                  "startColumn": 1,
+                  "endLine": 1,
+                  "endColumn": 1
+                }
+              },
+              "message": {
+                "text": "usr/local/lib/node_modules/npm/node_modules/tar/package.json: tar@7.5.11"
+              }
+            }
+          ]
+        },
+        {
+          "ruleId": "CVE-2026-59875",
+          "ruleIndex": 12,
+          "level": "warning",
+          "message": {
+            "text": "Package: tar\nInstalled Version: 7.5.11\nVulnerability CVE-2026-59875\nSeverity: MEDIUM\nFixed Version: 7.5.17\nLink: [CVE-2026-59875](https://avd.aquasec.com/nvd/cve-2026-59875)"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "usr/local/lib/node_modules/npm/node_modules/tar/package.json",
+                  "uriBaseId": "ROOTPATH"
+                },
+                "region": {
+                  "startLine": 1,
+                  "startColumn": 1,
+                  "endLine": 1,
+                  "endColumn": 1
+                }
+              },
+              "message": {
+                "text": "usr/local/lib/node_modules/npm/node_modules/tar/package.json: tar@7.5.11"
+              }
+            }
+          ]
+        },
+        {
+          "ruleId": "GHSA-r292-9mhp-454m",
+          "ruleIndex": 13,
+          "level": "warning",
+          "message": {
+            "text": "Package: tar\nInstalled Version: 7.5.11\nVulnerability GHSA-r292-9mhp-454m\nSeverity: MEDIUM\nFixed Version: 7.5.21\nLink: [GHSA-r292-9mhp-454m](https://github.com/advisories/GHSA-r292-9mhp-454m)"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "usr/local/lib/node_modules/npm/node_modules/tar/package.json",
+                  "uriBaseId": "ROOTPATH"
+                },
+                "region": {
+                  "startLine": 1,
+                  "startColumn": 1,
+                  "endLine": 1,
+                  "endColumn": 1
+                }
+              },
+              "message": {
+                "text": "usr/local/lib/node_modules/npm/node_modules/tar/package.json: tar@7.5.11"
+              }
+            }
+          ]
+        }
+      ],
+      "columnKind": "utf16CodeUnits",
+      "properties": {
+        "imageID": "sha256:3bf6c9c770eac8dc4136b2f6f478c9754eca82d6a5837bc21e9c241dd51a9ebd",
+        "imageName": "atlas-frontend-arm64:ci",
+        "repoDigests": [],
+        "repoTags": [
+          "atlas-frontend-arm64:ci"
+        ]
+      }
+    }
+  ]
+}

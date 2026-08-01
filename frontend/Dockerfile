@@ -10,6 +10,8 @@ RUN npm run build
 
 FROM node:22-alpine
 
+RUN rm -rf /usr/local/lib/node_modules/npm /usr/local/bin/npm /usr/local/bin/npx
+
 ENV NODE_ENV=production \
     VITE_API_URL=http://localhost:8000/api/v1 \
     VITE_KEYCLOAK_URL=http://localhost:8080 \
