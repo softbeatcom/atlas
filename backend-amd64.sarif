@@ -1,0 +1,197 @@
+{
+  "version": "2.1.0",
+  "$schema": "https://raw.githubusercontent.com/oasis-tcs/sarif-spec/main/sarif-2.1/schema/sarif-schema-2.1.0.json",
+  "runs": [
+    {
+      "tool": {
+        "driver": {
+          "fullName": "Trivy Vulnerability Scanner",
+          "informationUri": "https://github.com/aquasecurity/trivy",
+          "name": "Trivy",
+          "rules": [
+            {
+              "id": "GHSA-6v7p-g79w-8964",
+              "name": "LanguageSpecificPackageVulnerability",
+              "shortDescription": {
+                "text": "MessagePack for Python: Out-of-bounds read / crash on Unpacker reuse after a caught error"
+              },
+              "fullDescription": {
+                "text": "### Impact\n\nIf the Unpacker is used repeatedly after an error occurs, the process may crash with a SEGV.\n\nIf the Unpacker is used repeatedly to unpack untrusted input from external sources, it may be vulnerable to a DoS attack.\n\n### Patches\n\nv1.2.1\n\n### Workarounds\n\nUsers should create a new Unpacker instead of reusing the same Unpacker after an error occurs.\n\nApplying the above patch can prevent SEGV, but reusing the Streaming Unpacker after it has encountered an error will not yield correct data. If an error occurs during Streaming Unpacking, the Stream and Streaming Unpacker should be discarded.\n\nTherefore, this is not just a workaround but the correct solution. The above patch only prevents crashes from incorrect usage."
+              },
+              "defaultConfiguration": {
+                "level": "error"
+              },
+              "helpUri": "https://github.com/advisories/GHSA-6v7p-g79w-8964",
+              "help": {
+                "text": "Vulnerability GHSA-6v7p-g79w-8964\nSeverity: HIGH\nPackage: msgpack\nFixed Version: 1.2.1\nLink: [GHSA-6v7p-g79w-8964](https://github.com/advisories/GHSA-6v7p-g79w-8964)\n### Impact\n\nIf the Unpacker is used repeatedly after an error occurs, the process may crash with a SEGV.\n\nIf the Unpacker is used repeatedly to unpack untrusted input from external sources, it may be vulnerable to a DoS attack.\n\n### Patches\n\nv1.2.1\n\n### Workarounds\n\nUsers should create a new Unpacker instead of reusing the same Unpacker after an error occurs.\n\nApplying the above patch can prevent SEGV, but reusing the Streaming Unpacker after it has encountered an error will not yield correct data. If an error occurs during Streaming Unpacking, the Stream and Streaming Unpacker should be discarded.\n\nTherefore, this is not just a workaround but the correct solution. The above patch only prevents crashes from incorrect usage.",
+                "markdown": "**Vulnerability GHSA-6v7p-g79w-8964**\n| Severity | Package | Fixed Version | Link |\n| --- | --- | --- | --- |\n|HIGH|msgpack|1.2.1|[GHSA-6v7p-g79w-8964](https://github.com/advisories/GHSA-6v7p-g79w-8964)|\n\n### Impact\n\nIf the Unpacker is used repeatedly after an error occurs, the process may crash with a SEGV.\n\nIf the Unpacker is used repeatedly to unpack untrusted input from external sources, it may be vulnerable to a DoS attack.\n\n### Patches\n\nv1.2.1\n\n### Workarounds\n\nUsers should create a new Unpacker instead of reusing the same Unpacker after an error occurs.\n\nApplying the above patch can prevent SEGV, but reusing the Streaming Unpacker after it has encountered an error will not yield correct data. If an error occurs during Streaming Unpacking, the Stream and Streaming Unpacker should be discarded.\n\nTherefore, this is not just a workaround but the correct solution. The above patch only prevents crashes from incorrect usage."
+              },
+              "properties": {
+                "cvssv3_baseScore": 7.5,
+                "cvssv3_vector": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:H",
+                "precision": "very-high",
+                "security-severity": "7.5",
+                "tags": [
+                  "vulnerability",
+                  "security",
+                  "HIGH"
+                ]
+              }
+            },
+            {
+              "id": "CVE-2025-47273",
+              "name": "LanguageSpecificPackageVulnerability",
+              "shortDescription": {
+                "text": "setuptools: Path Traversal Vulnerability in setuptools PackageIndex"
+              },
+              "fullDescription": {
+                "text": "setuptools is a package that allows users to download, build, install, upgrade, and uninstall Python packages. A path traversal vulnerability in `PackageIndex` is present in setuptools prior to version 78.1.1. An attacker would be allowed to write files to arbitrary locations on the filesystem with the permissions of the process running the Python code, which could escalate to remote code execution depending on the context. Version 78.1.1 fixes the issue."
+              },
+              "defaultConfiguration": {
+                "level": "error"
+              },
+              "helpUri": "https://avd.aquasec.com/nvd/cve-2025-47273",
+              "help": {
+                "text": "Vulnerability CVE-2025-47273\nSeverity: HIGH\nPackage: setuptools\nFixed Version: 78.1.1\nLink: [CVE-2025-47273](https://avd.aquasec.com/nvd/cve-2025-47273)\nsetuptools is a package that allows users to download, build, install, upgrade, and uninstall Python packages. A path traversal vulnerability in `PackageIndex` is present in setuptools prior to version 78.1.1. An attacker would be allowed to write files to arbitrary locations on the filesystem with the permissions of the process running the Python code, which could escalate to remote code execution depending on the context. Version 78.1.1 fixes the issue.",
+                "markdown": "**Vulnerability CVE-2025-47273**\n| Severity | Package | Fixed Version | Link |\n| --- | --- | --- | --- |\n|HIGH|setuptools|78.1.1|[CVE-2025-47273](https://avd.aquasec.com/nvd/cve-2025-47273)|\n\nsetuptools is a package that allows users to download, build, install, upgrade, and uninstall Python packages. A path traversal vulnerability in `PackageIndex` is present in setuptools prior to version 78.1.1. An attacker would be allowed to write files to arbitrary locations on the filesystem with the permissions of the process running the Python code, which could escalate to remote code execution depending on the context. Version 78.1.1 fixes the issue."
+              },
+              "properties": {
+                "cvssv40_baseScore": 7.7,
+                "cvssv40_vector": "CVSS:4.0/AV:N/AC:L/AT:N/PR:N/UI:N/VC:N/VI:H/VA:N/SC:N/SI:N/SA:N/E:P",
+                "precision": "very-high",
+                "security-severity": "8.0",
+                "tags": [
+                  "vulnerability",
+                  "security",
+                  "HIGH"
+                ]
+              }
+            },
+            {
+              "id": "CVE-2026-59890",
+              "name": "LanguageSpecificPackageVulnerability",
+              "shortDescription": {
+                "text": "setuptools: setuptools: MANIFEST.in exclusion bypass in sdist via Unicode normalization collision (NFC/NFD)"
+              },
+              "fullDescription": {
+                "text": "setuptools is a package that allows users to download, build, install, upgrade, and uninstall Python packages. Prior to 83.0.0, FileList applied MANIFEST.in exclude, global-exclude, recursive-exclude, and prune directives by matching compiled glob patterns against on-disk file names without Unicode normalization, so on macOS APFS or HFS+ an NFD file name could bypass an NFC exclusion rule and be packed into a source distribution. This issue is fixed in version 83.0.0."
+              },
+              "defaultConfiguration": {
+                "level": "warning"
+              },
+              "helpUri": "https://avd.aquasec.com/nvd/cve-2026-59890",
+              "help": {
+                "text": "Vulnerability CVE-2026-59890\nSeverity: MEDIUM\nPackage: setuptools\nFixed Version: 83.0.0\nLink: [CVE-2026-59890](https://avd.aquasec.com/nvd/cve-2026-59890)\nsetuptools is a package that allows users to download, build, install, upgrade, and uninstall Python packages. Prior to 83.0.0, FileList applied MANIFEST.in exclude, global-exclude, recursive-exclude, and prune directives by matching compiled glob patterns against on-disk file names without Unicode normalization, so on macOS APFS or HFS+ an NFD file name could bypass an NFC exclusion rule and be packed into a source distribution. This issue is fixed in version 83.0.0.",
+                "markdown": "**Vulnerability CVE-2026-59890**\n| Severity | Package | Fixed Version | Link |\n| --- | --- | --- | --- |\n|MEDIUM|setuptools|83.0.0|[CVE-2026-59890](https://avd.aquasec.com/nvd/cve-2026-59890)|\n\nsetuptools is a package that allows users to download, build, install, upgrade, and uninstall Python packages. Prior to 83.0.0, FileList applied MANIFEST.in exclude, global-exclude, recursive-exclude, and prune directives by matching compiled glob patterns against on-disk file names without Unicode normalization, so on macOS APFS or HFS+ an NFD file name could bypass an NFC exclusion rule and be packed into a source distribution. This issue is fixed in version 83.0.0."
+              },
+              "properties": {
+                "cvssv3_baseScore": 6.1,
+                "cvssv3_vector": "CVSS:3.1/AV:L/AC:L/PR:N/UI:R/S:U/C:H/I:L/A:N",
+                "precision": "very-high",
+                "security-severity": "6.1",
+                "tags": [
+                  "vulnerability",
+                  "security",
+                  "MEDIUM"
+                ]
+              }
+            }
+          ],
+          "version": "0.70.0"
+        }
+      },
+      "results": [
+        {
+          "ruleId": "GHSA-6v7p-g79w-8964",
+          "ruleIndex": 0,
+          "level": "error",
+          "message": {
+            "text": "Package: msgpack\nInstalled Version: 1.1.2\nVulnerability GHSA-6v7p-g79w-8964\nSeverity: HIGH\nFixed Version: 1.2.1\nLink: [GHSA-6v7p-g79w-8964](https://github.com/advisories/GHSA-6v7p-g79w-8964)"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "Python",
+                  "uriBaseId": "ROOTPATH"
+                },
+                "region": {
+                  "startLine": 1,
+                  "startColumn": 1,
+                  "endLine": 1,
+                  "endColumn": 1
+                }
+              },
+              "message": {
+                "text": "Python: msgpack@1.1.2"
+              }
+            }
+          ]
+        },
+        {
+          "ruleId": "CVE-2025-47273",
+          "ruleIndex": 1,
+          "level": "error",
+          "message": {
+            "text": "Package: setuptools\nInstalled Version: 70.3.0\nVulnerability CVE-2025-47273\nSeverity: HIGH\nFixed Version: 78.1.1\nLink: [CVE-2025-47273](https://avd.aquasec.com/nvd/cve-2025-47273)"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "Python",
+                  "uriBaseId": "ROOTPATH"
+                },
+                "region": {
+                  "startLine": 1,
+                  "startColumn": 1,
+                  "endLine": 1,
+                  "endColumn": 1
+                }
+              },
+              "message": {
+                "text": "Python: setuptools@70.3.0"
+              }
+            }
+          ]
+        },
+        {
+          "ruleId": "CVE-2026-59890",
+          "ruleIndex": 2,
+          "level": "warning",
+          "message": {
+            "text": "Package: setuptools\nInstalled Version: 70.3.0\nVulnerability CVE-2026-59890\nSeverity: MEDIUM\nFixed Version: 83.0.0\nLink: [CVE-2026-59890](https://avd.aquasec.com/nvd/cve-2026-59890)"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "Python",
+                  "uriBaseId": "ROOTPATH"
+                },
+                "region": {
+                  "startLine": 1,
+                  "startColumn": 1,
+                  "endLine": 1,
+                  "endColumn": 1
+                }
+              },
+              "message": {
+                "text": "Python: setuptools@70.3.0"
+              }
+            }
+          ]
+        }
+      ],
+      "columnKind": "utf16CodeUnits",
+      "properties": {
+        "imageID": "sha256:3c3323ffa183d3b4c900f72e64d87e1d5e5c7d56f11bc3e3f830dc370318f905",
+        "imageName": "atlas-backend-amd64:ci",
+        "repoDigests": [],
+        "repoTags": [
+          "atlas-backend-amd64:ci"
+        ]
+      }
+    }
+  ]
+}
